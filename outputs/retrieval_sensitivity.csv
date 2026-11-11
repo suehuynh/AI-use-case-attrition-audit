@@ -1,0 +1,5 @@
+agency_weight,cross_agency_share_topk,cross_agency_share_top1
+0.0,0.843,0.669
+0.1,0.499,0.419
+0.2,0.436,0.304
+0.4,0.427,0.257

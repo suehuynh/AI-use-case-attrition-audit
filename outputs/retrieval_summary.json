@@ -1,0 +1,40 @@
+{
+  "n_dropped": 826,
+  "prior_explanation_counts": {
+    "none": 606,
+    "dissolved_agency": 104,
+    "retired_in_2024": 83,
+    "dissolved_agency+retired_in_2024": 33
+  },
+  "n_candidate_pairs": 8260,
+  "cross_agency_share_topk": 0.436,
+  "top1_score_quantiles": {
+    "0.1": 0.287,
+    "0.25": 0.376,
+    "0.5": 0.448,
+    "0.75": 0.558,
+    "0.9": 0.696
+  },
+  "sensitivity": [
+    {
+      "agency_weight": 0.0,
+      "cross_agency_share_topk": 0.843,
+      "cross_agency_share_top1": 0.669
+    },
+    {
+      "agency_weight": 0.1,
+      "cross_agency_share_topk": 0.499,
+      "cross_agency_share_top1": 0.419
+    },
+    {
+      "agency_weight": 0.2,
+      "cross_agency_share_topk": 0.436,
+      "cross_agency_share_top1": 0.304
+    },
+    {
+      "agency_weight": 0.4,
+      "cross_agency_share_topk": 0.427,
+      "cross_agency_share_top1": 0.257
+    }
+  ]
+}
