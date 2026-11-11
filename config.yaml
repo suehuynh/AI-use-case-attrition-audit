@@ -1,0 +1,94 @@
+# Single source of truth for the attrition audit.
+# Raw sources: github.com/ombegov/2024-Federal-AI-Use-Case-Inventory
+#              github.com/ombegov/2025-Federal-Agency-AI-Use-Case-Inventory
+
+paths:
+  raw_dir: data/raw
+  output_dir: outputs
+
+inventories:
+  "2024":
+    file: 2024_consolidated_ai_inventory_raw_v2.csv
+    encoding: cp1252
+    columns:
+      name: "Use Case Name"
+      agency: "Agency Abbreviation"
+      bureau: "Bureau"
+      purpose: ["What is the intended purpose and expected benefits of the AI?"]
+      outputs: ["Describe the AI system’s outputs."]
+      stage: "Stage of Development"
+      impact: "Is the AI use case rights-impacting, safety-impacting, both, or neither?"
+  "2025":
+    file: 2025_individually_reported_AI_use_cases.csv
+    encoding: utf-8
+    columns:
+      name: use_case_name
+      agency: agency
+      bureau: agency_bureau
+      purpose: [problem_solved]   # best replication of paper; [problem_solved, benefits] gives 802 dropped
+      outputs: [system_outputs]
+      stage: development_stage
+      impact: is_high_impact
+      record_id: id
+      withheld: is_withheld
+
+# Filters applied before matching. Toggle to search for the paper's counts.
+filters:
+  drop_missing_name: true
+  dedupe_name_agency: true    # drop exact duplicate (name, agency) rows
+  drop_withheld: false        # drop 2025 rows flagged as withheld
+
+# Lurie et al. (2026), Appendix A: Longitudinal AI Use Case Inventory Tracking
+baseline:
+  name_weight: 0.65
+  purpose_weight: 0.35
+  composite_threshold: 65
+  name_only_threshold: 70
+  scorer: token_sort_ratio
+
+# Targets reported in the paper (2024 -> 2025)
+targets:
+  main_text: {persisted: 1227, dropped: 823, new: 2247}
+  appendix: {exact: 1044, fuzzy: 179, dropped: 833, new: 2251}
+
+known_dissolved_agencies: [USAID]
+
+# Phase 1 step 2: cross-agency candidate retrieval for dropped 2024 records.
+# Weights sum to 1. Agency is a score bonus, never a filter (see design notes in retrieval.py).
+retrieval:
+  top_k: 10
+  shortlist_k: 50   # per-row pre-selection from each of TF-IDF and fuzzy before full scoring
+  weights:
+    tfidf: 0.5      # cosine similarity of TF-IDF vectors on name + purpose
+    fuzzy_name: 0.3 # rapidfuzz token_set_ratio on names, rescaled to 0-1
+    agency: 0.2     # 1.0 if same agency, else 0.0
+  tfidf:
+    max_features: 10000
+    ngram_range: [1, 2]
+    sublinear_tf: true
+  # Bonus weights to compare in the sensitivity check
+  agency_weight_grid: [0.0, 0.1, 0.2, 0.4]
+
+# Phase 1 step 3: pairwise LLM adjudication (one call per dropped record x candidate)
+adjudication:
+  prompt_file: prompts/adjudicator_v1.txt
+  models:                     # compared on the 50-record pilot
+    - meta-llama/Llama-3.1-8B-Instruct
+    - Qwen/Qwen2.5-7B-Instruct
+    - meta-llama/Llama-3.2-1B-Instruct   # small-model baseline
+  temperature: 0.0
+  max_new_tokens: 200
+  max_field_chars: 600        # truncate long purpose/outputs text
+  guided_json: true           # vLLM structured output with the prompt's schema
+  seed: 0
+  pilot_n: 50
+
+# Deterministic rules that turn pairwise relations into one label per dropped record
+# (applied in AttritionClassifier, priority order)
+final_labels:
+  - withheld            # 2025 record on the withheld list (rule, no LLM)
+  - renamed             # SAME_SYSTEM, same agency
+  - cross_agency_move   # SAME_SYSTEM, different agency
+  - consolidated        # PART_OF, or 2+ dropped records SAME_SYSTEM to one 2025 record
+  - moved_to_cots       # matches a same-agency product in the 2025 COTS checklist
+  - absent              # none of the above
