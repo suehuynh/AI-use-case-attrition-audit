@@ -68,10 +68,10 @@ class PilotSampler:
 
     @staticmethod
     def sample(dropped: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
-        groups = dropped.groupby("prior_explanation", group_keys=False)
         frac = n / len(dropped)
-        s = groups.apply(lambda g: g.sample(max(1, round(len(g) * frac)), random_state=seed))
-        return s.head(n).reset_index(drop=True)
+        parts = [g.sample(max(1, round(len(g) * frac)), random_state=seed)
+                 for _, g in dropped.groupby("prior_explanation")]
+        return pd.concat(parts).head(n).reset_index(drop=True)
 
 
 # ---------------------------------------------------------------------------
