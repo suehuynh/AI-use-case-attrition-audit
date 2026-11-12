@@ -21,6 +21,7 @@ MODE=${MODE:-pilot}
 BACKEND=${BACKEND:-vllm}
 
 # module load cuda
+module load python/3.11.11-5e66
 source ~/envs/attrition/bin/activate
 
 # Keep model weights in scratch
