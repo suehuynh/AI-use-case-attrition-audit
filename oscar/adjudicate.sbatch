@@ -35,4 +35,5 @@ nvidia-smi
 PILOT_FLAG=""
 [ "$MODE" = "pilot" ] && PILOT_FLAG="--pilot"
 
+export VLLM_USE_FLASHINFER_SAMPLER=0
 python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG
