@@ -25,7 +25,8 @@ module load python/3.11.11-5e66
 source ~/envs/attrition/bin/activate
 
 # Keep model weights in scratch
-export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
+# export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
+export HF_HUB_CACHE=${HF_HUB_CACHE:-$HOME/scratch/hf_cache}
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
