@@ -66,18 +66,13 @@ class PromptBuilder:
 class PilotSampler:
     """Pilot sample stratified by prior explanation, so explained drops are also checked."""
 
-    # @staticmethod
-    # def sample(dropped: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
-    #     groups = dropped.groupby("prior_explanation", group_keys=False)
-    #     frac = n / len(dropped)
-    #     s = groups.apply(lambda g: g.sample(max(1, round(len(g) * frac)), random_state=seed))
-    #     return s.head(n).reset_index(drop=True)
     @staticmethod
     def sample(dropped: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
+        groups = dropped.groupby("prior_explanation", group_keys=False)
         frac = n / len(dropped)
-        parts = [g.sample(max(1, round(len(g) * frac)), random_state=seed)
-                 for _, g in dropped.groupby("prior_explanation")]
-        return pd.concat(parts).head(n).reset_index(drop=True)
+        s = groups.apply(lambda g: g.sample(max(1, round(len(g) * frac)), random_state=seed))
+        return s.head(n).reset_index(drop=True)
+
 
 # ---------------------------------------------------------------------------
 @dataclass
@@ -128,6 +123,8 @@ class LLMAdjudicator:
         self.max_new_tokens = p["max_new_tokens"]
         self.guided_json = p["guided_json"]
         self.seed = p["seed"]
+        self.max_model_len = p.get("max_model_len", 4096)
+        self.gpu_memory_utilization = p.get("gpu_memory_utilization", 0.90)
         self.prompts = PromptBuilder(config.root / p["prompt_file"], p["max_field_chars"])
         self._engine = None
         self.backend_version = "n/a"
@@ -140,7 +137,11 @@ class LLMAdjudicator:
         self.backend_version = f"vllm=={vllm.__version__}"
         if self._engine is None:
             # Prefix caching reuses the shared system prompt across all calls.
-            self._engine = LLM(model=self.model, seed=self.seed, enable_prefix_caching=True)
+            # max_model_len: Llama-3.1 defaults to 128k context, whose KV cache does not fit
+            # on a 24 GB GPU. Our prompts are ~2k tokens, so 4096 is plenty.
+            self._engine = LLM(model=self.model, seed=self.seed, enable_prefix_caching=True,
+                               max_model_len=self.max_model_len,
+                               gpu_memory_utilization=self.gpu_memory_utilization)
         kwargs = dict(temperature=self.temperature, max_tokens=self.max_new_tokens, seed=self.seed)
         if self.guided_json:
             kwargs.update(self._vllm_structured_kwargs())

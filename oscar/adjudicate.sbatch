@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pairwise LLM adjudication on one GPU.
+# Pairwise LLM adjudication.
 # Usage:
 #   sbatch slurm/adjudicate.sbatch                                         # pilot, default model
 #   sbatch --export=ALL,MODEL=Qwen/Qwen2.5-7B-Instruct slurm/adjudicate.sbatch
@@ -20,12 +20,11 @@ MODEL=${MODEL:-meta-llama/Llama-3.1-8B-Instruct}
 MODE=${MODE:-pilot}
 BACKEND=${BACKEND:-vllm}
 
-# module load cuda          # if your cluster needs it
-source ~/envs/attrition/bin/activate   # your virtualenv with vllm installed
+# module load cuda
+source ~/envs/attrition/bin/activate
 
-# Keep model weights in scratch, not your home quota
+# Keep model weights in scratch
 export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
-# Llama models are gated: run `huggingface-cli login` once on a login node first
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs

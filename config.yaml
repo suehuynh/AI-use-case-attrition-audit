@@ -82,6 +82,8 @@ adjudication:
   guided_json: true           # vLLM structured output with the prompt's schema
   seed: 0
   pilot_n: 50
+  max_model_len: 4096           # prompt ~2k tokens + 200 output; default 128k won't fit in 24 GB
+  gpu_memory_utilization: 0.90
 
 # Deterministic rules that turn pairwise relations into one label per dropped record
 # (applied in AttritionClassifier, priority order)
