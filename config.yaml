@@ -53,6 +53,16 @@ targets:
 
 known_dissolved_agencies: [USAID]
 
+# 2025 checklist of commercial (COTS) products; used for the moved_to_cots label
+cots:
+  file: 2025_consolidated_COTS_AI_use_cases.csv
+  min_name_score: 85        # token_set_ratio between 2024 use case name and 2025 product name
+  agency_name_overrides:    # COTS file uses full agency names; these do not match 2024 names exactly
+    "Department of Treasury": TREAS
+    "Federal Reserve Board of Governors": FRB
+    "United States Election Assistance Commission": EAC
+    "Department of Veteran Affairs-OIG": VA
+
 # Phase 1 step 2: cross-agency candidate retrieval for dropped 2024 records.
 # Weights sum to 1. Agency is a score bonus, never a filter (see design notes in retrieval.py).
 retrieval:
