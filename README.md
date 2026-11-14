@@ -13,6 +13,7 @@ git clone --depth 1 https://github.com/ombegov/2025-Federal-Agency-AI-Use-Case-I
 
 cp inv2024/data/2024_consolidated_ai_inventory_raw_v2.csv data/raw/
 cp inv2025/Data/2025_individually_reported_AI_use_cases.csv data/raw/
+cp inv2025/Data/2025_consolidated_COTS_AI_use_cases.csv data/raw/
 ```
 
 Usage notes:
@@ -95,3 +96,17 @@ Among the 606 unexplained drops, 17.2% of top-1 candidates are cross-agency.
 - **Generic commercial tools dominate cross-agency candidates** (Copilot, Adobe, Visual Studio).
   These are the same product at different agencies, not moved systems. The adjudicator prompt must
   separate "same product, different deployment" from "same system".
+
+## Full pipeline (run order)
+| Step | Command | Where | Time |
+|---|---|---|---|
+| 1. Baseline replication | `python scripts/run_baseline.py` | CPU | ~5 min |
+| 2. Candidate retrieval | `python scripts/run_retrieval.py` | CPU | ~15 s |
+| 3. COTS checklist matches | `python scripts/build_cots_candidates.py` | CPU | seconds |
+| 4. LLM adjudication | `sbatch [--time=06:00:00] --export=ALL,MODE=full,MODEL=...,PROMPT=... oscar/adjudicate.sbatch` | GPU | 10 min to 3 h |
+| 5. Final labels | `python scripts/run_classify.py --run full__<model>__<prompt>` | CPU | seconds |
+| Pilot scoring | `python scripts/score_pilot.py` (needs hand labels, see `docs/codebook.md`) | CPU | seconds |
+
+Final labels: `outputs/final/<run>/record_labels.csv` (one row per dropped record, with the matched
+2025 record, the relation, and `consolidation_reason`), `by_agency.csv`, `summary.json`.
+`final_label_high_conf` repeats the labeling using only high-confidence LLM matches (sensitivity check).
