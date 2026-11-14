@@ -37,9 +37,13 @@ def main() -> None:
     ap.add_argument("--backend", default="vllm", choices=["vllm", "transformers", "mock"])
     ap.add_argument("--pilot", action="store_true", help="run on the pilot sample only")
     ap.add_argument("--dump-prompts", type=int, default=0, help="print N prompts and exit")
+    ap.add_argument("--prompt-file", default=None,
+                    help="override config adjudication.prompt_file, e.g. prompts/adjudicator_v1.txt")
     args = ap.parse_args()
 
     cfg = Config.load(args.config)
+    if args.prompt_file:
+        cfg.raw["adjudication"]["prompt_file"] = args.prompt_file
     p = cfg.raw["adjudication"]
     model = args.model or p["models"][0]
     out = cfg.output_dir

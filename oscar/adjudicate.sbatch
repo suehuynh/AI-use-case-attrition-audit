@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pairwise LLM adjudication.
+# Pairwise LLM adjudication on one GPU.
 # Usage:
 #   sbatch slurm/adjudicate.sbatch                                         # pilot, default model
 #   sbatch --export=ALL,MODEL=Qwen/Qwen2.5-7B-Instruct slurm/adjudicate.sbatch
@@ -19,14 +19,14 @@ set -euo pipefail
 MODEL=${MODEL:-meta-llama/Llama-3.1-8B-Instruct}
 MODE=${MODE:-pilot}
 BACKEND=${BACKEND:-vllm}
+PROMPT=${PROMPT:-}                       # e.g. prompts/adjudicator_v1.txt; empty = use config
 
-# module load cuda
-module load python/3.11.11-5e66
-source ~/envs/attrition/bin/activate
+# module load cuda          # if your cluster needs it
+source ~/envs/attrition/bin/activate   # your virtualenv with vllm installed
 
-# Keep model weights in scratch
-# export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
-export HF_HUB_CACHE=${HF_HUB_CACHE:-$HOME/scratch/hf_cache}
+# Keep model weights in scratch, not your home quota
+export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
+# Llama models are gated: run `huggingface-cli login` once on a login node first
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
@@ -35,5 +35,7 @@ nvidia-smi
 PILOT_FLAG=""
 [ "$MODE" = "pilot" ] && PILOT_FLAG="--pilot"
 
-export VLLM_USE_FLASHINFER_SAMPLER=0
-python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG
+PROMPT_FLAG=""
+[ -n "$PROMPT" ] && PROMPT_FLAG="--prompt-file $PROMPT"
+
+python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG $PROMPT_FLAG

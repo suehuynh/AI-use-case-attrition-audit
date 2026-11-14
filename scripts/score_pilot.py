@@ -123,7 +123,7 @@ def main() -> None:
     rows = []
     for f in sorted((cfg.output_dir / "adjudication").glob("pilot__*.csv")):
         model = pd.read_csv(f)
-        name = f.stem.split("__")[1]
+        name = "__".join(f.stem.split("__")[1:])  # model__prompt_version
         s, errors = score(human, model)
         rows.append({"model": name, **s})
         errors.to_csv(label_dir / f"pilot_errors__{name}.csv", index=False)
