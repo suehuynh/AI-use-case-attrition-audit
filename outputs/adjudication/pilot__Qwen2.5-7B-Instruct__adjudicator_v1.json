@@ -1,0 +1,16 @@
+{
+  "run": "pilot__Qwen2.5-7B-Instruct__adjudicator_v1",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "backend": "vllm==0.11.0",
+  "pairs": 500,
+  "seconds": 330.7,
+  "valid_json_rate": 1.0,
+  "quote_2024_found_rate": 0.856,
+  "quote_2025_found_rate": 0.868,
+  "relation_counts": {
+    "DIFFERENT": 426,
+    "SAME_PRODUCT_DIFFERENT_DEPLOYMENT": 36,
+    "SAME_SYSTEM": 30,
+    "PART_OF": 8
+  }
+}

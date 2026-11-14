@@ -71,7 +71,7 @@ retrieval:
 
 # Phase 1 step 3: pairwise LLM adjudication (one call per dropped record x candidate)
 adjudication:
-  prompt_file: prompts/adjudicator_v1.txt
+  prompt_file: prompts/adjudicator_v2.txt   # v1 kept for the pilot runs already done
   models:                     # compared on the 50-record pilot
     - meta-llama/Llama-3.1-8B-Instruct
     - Qwen/Qwen2.5-7B-Instruct
@@ -92,5 +92,6 @@ final_labels:
   - renamed             # SAME_SYSTEM, same agency
   - cross_agency_move   # SAME_SYSTEM, different agency
   - consolidated        # PART_OF, or 2+ dropped records SAME_SYSTEM to one 2025 record
+  - split               # SPLIT_INTO: broad 2024 entry divided into specific 2025 entries
   - moved_to_cots       # matches a same-agency product in the 2025 COTS checklist
   - absent              # none of the above
