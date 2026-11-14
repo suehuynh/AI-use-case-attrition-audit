@@ -105,3 +105,15 @@ final_labels:
   - split               # SPLIT_INTO: broad 2024 entry divided into specific 2025 entries
   - moved_to_cots       # matches a same-agency product in the 2025 COTS checklist
   - absent              # none of the above
+
+# Phase 2: held-out validation sample (two independent coders)
+validation:
+  run: full__Qwen2.5-7B-Instruct__adjudicator_v1   # strata come from this run's final labels
+  seed: 2026
+  coders: [sue, tomo]
+  allocation:            # records sampled per stratum (capped at stratum size); total ~100
+    absent: 35
+    renamed: 20
+    consolidated: 20
+    cross_agency_move: 12
+    retired_matched: 13  # retired in 2024 but matched in 2025 (suspect)

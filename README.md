@@ -110,3 +110,19 @@ Among the 606 unexplained drops, 17.2% of top-1 candidates are cross-agency.
 Final labels: `outputs/final/<run>/record_labels.csv` (one row per dropped record, with the matched
 2025 record, the relation, and `consolidation_reason`), `by_agency.csv`, `summary.json`.
 `final_label_high_conf` repeats the labeling using only high-confidence LLM matches (sensitivity check).
+
+## Phase 2: held-out validation (two coders)
+Settings in `config.yaml -> validation` (run to validate, seed, coders, per-stratum allocation).
+
+1. `python scripts/make_validation_sheets.py` draws ~100 non-pilot records, stratified by the model's
+   final label (retired-but-matched records form their own stratum; rule-based `moved_to_cots`
+   records are not sampled), and writes one identical blind sheet per coder in `outputs/validation/`.
+   Run it once. `sample_manifest.csv` contains model labels: do not show it to coders.
+2. Each coder labels their sheet independently with `docs/codebook.md`. If no candidate matches,
+   they may search the `2025_inventory` tab and enter `found_2025_uid`.
+3. Put both sheets back in `outputs/validation/` and run `python scripts/score_validation.py`.
+   It reports inter-coder kappa and writes `disagreements.csv`.
+4. Resolve disagreements together (fill the `resolved_*` columns) and rerun step 3.
+5. Report from `validation_report.json`: inter-coder agreement, design-weighted model accuracy and
+   per-class precision/recall, and the corrected count of drops still in the record (with 95% CI).
+   Score several runs at once: `--runs full__...__adjudicator_v1 full__...__adjudicator_v2`.
