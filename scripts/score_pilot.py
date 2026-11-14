@@ -8,7 +8,7 @@ Writes
   outputs/labeling/pilot_scores.csv            one row per model
   outputs/labeling/pilot_errors__<model>.csv   pairs where model and human disagree
 
-Pair level: a pair is a "match" if its relation is SAME_SYSTEM or PART_OF.
+Pair level: a pair is a "match" if its relation is SAME_SYSTEM, PART_OF or SPLIT_INTO.
   SAME_PRODUCT_DIFFERENT_DEPLOYMENT and DIFFERENT both count as "no match".
 Record level: the model's pick is its best match candidate (confidence, then retrieval rank);
   the record is correct if the pick equals the human's match, or both say no match.
@@ -17,6 +17,7 @@ Usage: python scripts/score_pilot.py
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -26,7 +27,7 @@ from sklearn.metrics import cohen_kappa_score
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from attrition.config import Config  # noqa: E402
 
-MATCH = {"SAME_SYSTEM", "PART_OF"}
+MATCH = {"SAME_SYSTEM", "PART_OF", "SPLIT_INTO"}
 CONF_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
@@ -43,7 +44,7 @@ def load_human(label_dir: Path) -> pd.DataFrame:
     key = pd.read_csv(label_dir / "pilot_labeling_key.csv", dtype={"rank": int})
     rows = []
     for r in rec.itertuples():
-        ids = {c.strip().upper() for c in str(r.match_cand_ids).split(",") if c.strip()}
+        ids = {c.upper() for c in re.split(r"[,\s;]+", str(r.match_cand_ids)) if c}
         rel = r.relation.strip()
         for k in key[key["record_uid"] == r.record_uid].itertuples():
             human = rel if (k.cand_id in ids and rel != "NO_MATCH") else "NO_MATCH"
@@ -71,7 +72,7 @@ def score(human: pd.DataFrame, model: pd.DataFrame) -> tuple[dict, pd.DataFrame]
     prec = tp / (tp + fp) if tp + fp else float("nan")
     rec = tp / (tp + fn) if tp + fn else float("nan")
 
-    # 3-way: SAME_SYSTEM / PART_OF / NONE
+    # Multi-way: SAME_SYSTEM / PART_OF / SPLIT_INTO / NONE
     three = lambda s: s.where(s.isin(MATCH), "NONE")  # noqa: E731
     kappa = cohen_kappa_score(three(df["human_relation"]), three(df["relation"]))
 
@@ -97,6 +98,21 @@ def score(human: pd.DataFrame, model: pd.DataFrame) -> tuple[dict, pd.DataFrame]
     return s, errors
 
 
+def external_summary(label_dir: Path) -> None:
+    """Q2 counts for NO_MATCH records; a code without a source_url is reported as unverified."""
+    sheet = pd.read_excel(label_dir / "pilot_labeling_sheet.xlsx", header=7, dtype=str).fillna("")
+    if "external_status" not in sheet.columns:
+        return
+    rec = sheet[(sheet["role"] == "2024") & (sheet["relation"] == "NO_MATCH")]
+    has = rec["external_status"].str.strip() != ""
+    verified = has & (rec["source_url"].str.strip() != "")
+    print(f"\nQ2 external status for {len(rec)} NO_MATCH records "
+          f"({int(verified.sum())} with a source URL, {int((has & ~verified).sum())} unverified):")
+    tab = rec[has].assign(verified=verified[has].map({True: "verified", False: "unverified"}))
+    if len(tab):
+        print(pd.crosstab(tab["external_status"], tab["verified"]).to_string())
+
+
 def main() -> None:
     cfg = Config.load(Path(__file__).resolve().parents[1] / "config.yaml")
     label_dir = cfg.output_dir / "labeling"
@@ -114,6 +130,7 @@ def main() -> None:
     scores = pd.DataFrame(rows)
     scores.to_csv(label_dir / "pilot_scores.csv", index=False)
     print(scores.to_string(index=False))
+    external_summary(label_dir)
 
 
 if __name__ == "__main__":
