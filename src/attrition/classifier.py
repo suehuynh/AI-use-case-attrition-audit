@@ -7,12 +7,14 @@ Rules (docs/codebook.md, "Final record labels"), applied to each record's best m
                          else absent
   SPLIT_INTO (best, or 2+ SPLIT_INTO candidates)        -> split
   best 2025 record is on the withheld list              -> withheld
-  PART_OF                                               -> consolidated
-  SAME_SYSTEM, and the 2025 record is shared            -> consolidated
-      (shared = also the best match of another dropped record, or already
+  any match at a different agency                       -> cross_agency_move
+      (checked before consolidation: merging across agencies is implausible, and these
+       pairs are usually the same product at two agencies; Phase 2 checks them)
+  PART_OF, same agency                                  -> consolidated
+  SAME_SYSTEM, same agency, 2025 record is shared       -> consolidated
+      (shared = also the best match of another SAME-AGENCY dropped record, or already
        matched to a persisting 2024 record by the baseline)
   SAME_SYSTEM, same agency                              -> renamed
-  SAME_SYSTEM, different agency                         -> cross_agency_move
 """
 from __future__ import annotations
 
@@ -44,8 +46,11 @@ class AttritionClassifier:
     def classify(self, dropped: pd.DataFrame, adj: pd.DataFrame,
                  min_confidence: str = "low") -> pd.DataFrame:
         best = self.best_matches(adj, min_confidence)
-        # 2025 targets claimed by more than one dropped record
-        dup_targets = set(best.loc[best.duplicated("uid_next", keep=False), "uid_next"])
+        # 2025 targets claimed by more than one dropped record of the SAME agency
+        best["_prev_agency"] = best["uid_prev"].map(dropped.set_index("uid")["agency"])
+        best["_next_agency"] = best["uid_next"].map(self.nxt["agency"])
+        same = best[best["_prev_agency"] == best["_next_agency"]]
+        dup_targets = set(same.loc[same.duplicated("uid_next", keep=False), "uid_next"])
         best = best.set_index("uid_prev")
 
         rows = []
@@ -68,16 +73,16 @@ class AttritionClassifier:
                 label = "split"
             elif str(tgt.get("withheld", "")).lower().startswith("yes"):
                 label = "withheld"
+            elif tgt["agency"] != r.agency:
+                label = "cross_agency_move"
             elif b["relation"] == "PART_OF" or shared:
                 label = "consolidated"
                 out["consolidation_reason"] = (
                     "part_of" if b["relation"] == "PART_OF"
                     else "shared_with_dropped" if b["uid_next"] in dup_targets
                     else "shared_with_persisting")
-            elif tgt["agency"] == r.agency:
-                label = "renamed"
             else:
-                label = "cross_agency_move"
+                label = "renamed"
             out["final_label"] = label
             rows.append(out)
         return pd.DataFrame(rows)

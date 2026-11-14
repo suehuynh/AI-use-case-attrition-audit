@@ -15,6 +15,7 @@ NXT = pd.DataFrame([
     {"uid": "N5", "agency": "VA", "name": "Persisting system", "withheld": "No"},
     {"uid": "N6", "agency": "EPA", "name": "Helpdesk chat", "withheld": "No"},
     {"uid": "N7", "agency": "EPA", "name": "Records system", "withheld": "No"},
+    {"uid": "N8", "agency": "DOI", "name": "Image generation", "withheld": "No"},
 ])
 
 DROPPED = pd.DataFrame([
@@ -27,6 +28,8 @@ DROPPED = pd.DataFrame([
     {"uid": "P7", "agency": "EPA", "name": "ServiceNow AI"},       # split
     {"uid": "P8", "agency": "VA", "name": "Copilot"},              # moved_to_cots
     {"uid": "P9", "agency": "HHS", "name": "Gone"},                # absent
+    {"uid": "P10", "agency": "DOI", "name": "Caseguard"},          # renamed (N8 shared only cross-agency)
+    {"uid": "P11", "agency": "NCUA", "name": "Image editor"},      # cross-agency, not consolidated
 ])
 
 
@@ -46,6 +49,8 @@ ADJ = pd.DataFrame([
     pair("P7", "N7", "SPLIT_INTO", rank=2),
     pair("P8", "N1", "SAME_PRODUCT_DIFFERENT_DEPLOYMENT"),
     pair("P9", "N1", "DIFFERENT"),
+    pair("P10", "N8", "SAME_SYSTEM"),
+    pair("P11", "N8", "SAME_SYSTEM"),
 ])
 
 
@@ -58,7 +63,7 @@ def test_all_rules():
     assert labels() == {
         "P1": "renamed", "P2": "cross_agency_move", "P3": "consolidated", "P4": "consolidated",
         "P5": "withheld", "P6": "consolidated", "P7": "split", "P8": "moved_to_cots",
-        "P9": "absent",
+        "P9": "absent", "P10": "renamed", "P11": "cross_agency_move",
     }
 
 
