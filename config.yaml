@@ -109,10 +109,13 @@ final_labels:
 # Phase 2: held-out validation sample (two independent coders)
 validation:
   run: full__Qwen2.5-7B-Instruct__adjudicator_v1   # strata come from this run's final labels
+  compare_run: full__Qwen2.5-7B-Instruct__adjudicator_v2   # records absent in run but in-record here
+                                                           # get their own stratum (prompt disagreement)
   seed: 2026
   coders: [sue, tomo]
   allocation:            # records sampled per stratum (capped at stratum size); total ~100
-    absent: 35
+    absent: 25
+    absent_v1_inrecord_v2: 10   # prompt disagreement: v1 absent, v2 still in record
     renamed: 20
     consolidated: 20
     cross_agency_move: 12

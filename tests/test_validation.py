@@ -5,8 +5,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from attrition.validation import (ValidationSampler, cohen_kappa, gold_class,  # noqa: E402
-                                  stratified_total, weighted_precision_recall)
+from attrition.validation import (ValidationSampler, assign_strata, cohen_kappa,  # noqa: E402
+                                  gold_class, stratified_total, weighted_precision_recall)
 
 
 def labels():
@@ -53,3 +53,13 @@ def test_kappa_and_weighted_pr():
     df = pd.DataFrame({"pred": ["s", "s", "a"], "gold": ["s", "a", "a"], "weight": [1, 3, 1]})
     p, r = weighted_precision_recall(df, "pred", "gold", "s")
     assert p == 1 / 4 and r == 1
+
+
+def test_disagreement_stratum():
+    lab = labels()
+    comp = lab.copy()
+    comp.loc[comp["uid"].isin(["A1", "A2", "A3"]), "final_label"] = "renamed"
+    comp.loc[comp["uid"] == "A4", "final_label"] = "cross_agency_move"   # stays in absent stratum
+    s = assign_strata(lab, comp).set_index("uid")["stratum"]
+    assert s[["A1", "A2", "A3"]].tolist() == ["absent_v1_inrecord_v2"] * 3
+    assert s["A4"] == "absent" and s["T0"] == "retired_matched"

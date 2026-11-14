@@ -4,7 +4,8 @@ Design
 - Population: the 826 dropped records. The 50 pilot records are a census with their own human
   labels; the validation sample is drawn from the other records only.
 - Strata: the model's final label (v1 primary run), with records marked retired in 2024 that got
-  a match split into their own stratum. moved_to_cots is rule-based (name match to the COTS
+  a match split into their own stratum, and records v1 calls absent but the comparison run (v2)
+  calls still in the record split into 'absent_v1_inrecord_v2'. moved_to_cots is rule-based (name match to the COTS
   checklist), so it is not sampled and is counted as still in the record.
 - Each sampled record carries weight N_h / n_h. Because the weights depend only on the sampling
   design, the same human labels can score any model run (v1, v2) and give one corrected estimate.
@@ -33,6 +34,18 @@ def stratum_of(row: pd.Series) -> str:
     return row["final_label"]
 
 
+def assign_strata(labels: pd.DataFrame, compare: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Add the stratum column. compare: final labels of a second run (same uids)."""
+    out = labels.copy()
+    out["stratum"] = out.apply(stratum_of, axis=1)
+    if compare is not None:
+        other = compare.set_index("uid")["final_label"].reindex(out["uid"]).values
+        disagree = (out["final_label"] == "absent") & pd.Series(other, index=out.index).isin(
+            ["renamed", "consolidated", "split", "withheld"])
+        out.loc[disagree, "stratum"] = "absent_v1_inrecord_v2"
+    return out
+
+
 class ValidationSampler:
     def __init__(self, allocation: dict[str, int], seed: int):
         self.allocation = allocation
@@ -40,7 +53,8 @@ class ValidationSampler:
 
     def sample(self, labels: pd.DataFrame, exclude: set[str]) -> pd.DataFrame:
         pool = labels[~labels["uid"].isin(exclude)].copy()
-        pool["stratum"] = pool.apply(stratum_of, axis=1)
+        if "stratum" not in pool.columns:
+            pool["stratum"] = pool.apply(stratum_of, axis=1)
         pool = pool[pool["stratum"] != "moved_to_cots"]
         parts = []
         for h, g in pool.groupby("stratum"):
