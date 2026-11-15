@@ -12,7 +12,7 @@ Steps
    Until a disagreement is resolved, that record is left out of the estimates (a warning says how many).
 3. Gold class per record: same_agency / cross_agency / absent.
 4. Corrected estimate: stratified (design-weighted) total of same_agency over the non-pilot
-   population, plus the pilot census (Sue's labels) and the rule-based moved_to_cots records.
+   population, plus the pilot census (coder 1's labels) and the rule-based moved_to_cots records.
 5. For each model run: weighted accuracy and per-class precision/recall against gold.
 Writes outputs/validation/validation_report.json and confusion__<run>.csv
 """
@@ -52,7 +52,7 @@ def norm_ids(x: str) -> str:
 
 
 def pilot_census(cfg: Config, nxt_agency: pd.Series) -> pd.Series:
-    """Gold class for the 50 pilot records from Sue's reviewed labels (single coder)."""
+    """Gold class for the 50 pilot records from coder 1's reviewed labels (single coder)."""
     ldir = cfg.output_dir / "labeling"
     sheet = pd.read_excel(ldir / "pilot_labeling_sheet.xlsx", header=7, dtype=str).fillna("")
     sheet = sheet[(sheet["role"] == "2024") & (sheet["relation"].str.strip() != "")]
@@ -65,6 +65,8 @@ def pilot_census(cfg: Config, nxt_agency: pd.Series) -> pd.Series:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="*", default=None, help="model runs to score (final/<run>)")
+    ap.add_argument("--single", default=None, metavar="CODER",
+                    help="preview with one coder's labels as gold (no agreement stats)")
     args = ap.parse_args()
 
     cfg = Config.load(Path(__file__).resolve().parents[1] / "config.yaml")
@@ -77,8 +79,12 @@ def main() -> None:
     key = pd.read_csv(vdir / "validation_key.csv")
     nxt_agency = InventoryLoader(cfg).load("2025").set_index("uid")["agency"]
     a_name, b_name = v["coders"][:2]
+    if args.single:
+        a_name = b_name = args.single
+        print(f"PREVIEW: {args.single}'s labels used as gold (single coder; no agreement stats). "
+              "Do not edit the sheet based on this output.")
     A = read_sheet(vdir / f"validation_sheet__{a_name}.xlsx")
-    B = read_sheet(vdir / f"validation_sheet__{b_name}.xlsx")
+    B = A if args.single else read_sheet(vdir / f"validation_sheet__{b_name}.xlsx")
 
     def gold_for(row, uid):
         return gold_class(row["relation"], row["match_cand_ids"], row["found_2025_uid"],
@@ -104,7 +110,7 @@ def main() -> None:
 
     # Disagreements on gold class or on the chosen candidate
     dis_mask = (g["gold_a"] != g["gold_b"]) | ((g["gold_a"] != "absent") & (g["ids_a"] != g["ids_b"]))
-    res_path = vdir / "disagreements.csv"
+    res_path = vdir / ("disagreements.csv" if not args.single else "_preview_unused.csv")
     resolved = {}
     if res_path.exists():
         prev = pd.read_csv(res_path, dtype=str).fillna("")
@@ -182,10 +188,15 @@ def main() -> None:
         pd.crosstab(d["pred"], d["gold"]).reindex(index=CLASSES, columns=CLASSES, fill_value=0) \
             .to_csv(vdir / f"confusion__{run}.csv")
 
+    if args.single:
+        agreement = {"preview_single_coder": args.single, "records": len(both)}
+        if res_path.exists():
+            res_path.unlink()
     report = {"agreement": agreement, "unresolved_disagreements": unresolved,
               "corrected_estimate": corrected, "models": model_scores,
               "gold_by_stratum": pd.crosstab(df["stratum"], df["gold"]).to_dict("index")}
-    (vdir / "validation_report.json").write_text(json.dumps(report, indent=2))
+    name = "validation_report.json" if not args.single else f"preview_report__{args.single}.json"
+    (vdir / name).write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))
 
 
