@@ -1,0 +1,63 @@
+{
+  "chosen": "Qwen2.5-7B-Instruct",
+  "rule": "highest record accuracy among models that beat the always-NO_MATCH baseline; pair kappa breaks ties",
+  "reason": "highest record accuracy",
+  "eligible": [
+    "Qwen2.5-7B-Instruct",
+    "Llama-3.1-8B-Instruct",
+    "gemma-2-9b-it"
+  ],
+  "scores": [
+    {
+      "model": "Qwen2.5-7B-Instruct",
+      "records": 50,
+      "pairs": 500,
+      "invalid_pairs": 0,
+      "human_match_pairs": 32,
+      "model_match_pairs": 20,
+      "pair_precision": 0.55,
+      "pair_recall": 0.344,
+      "pair_f1": 0.423,
+      "pair_kappa": 0.393,
+      "records_correct": 32,
+      "record_accuracy": 0.64,
+      "baseline_records_correct": 24,
+      "baseline_accuracy": 0.48,
+      "beats_baseline": true
+    },
+    {
+      "model": "Llama-3.1-8B-Instruct",
+      "records": 50,
+      "pairs": 500,
+      "invalid_pairs": 0,
+      "human_match_pairs": 32,
+      "model_match_pairs": 94,
+      "pair_precision": 0.245,
+      "pair_recall": 0.719,
+      "pair_f1": 0.365,
+      "pair_kappa": 0.298,
+      "records_correct": 25,
+      "record_accuracy": 0.5,
+      "baseline_records_correct": 24,
+      "baseline_accuracy": 0.48,
+      "beats_baseline": true
+    },
+    {
+      "model": "gemma-2-9b-it",
+      "records": 50,
+      "pairs": 500,
+      "invalid_pairs": 0,
+      "human_match_pairs": 32,
+      "model_match_pairs": 44,
+      "pair_precision": 0.364,
+      "pair_recall": 0.5,
+      "pair_f1": 0.421,
+      "pair_kappa": 0.375,
+      "records_correct": 31,
+      "record_accuracy": 0.62,
+      "baseline_records_correct": 24,
+      "baseline_accuracy": 0.48,
+      "beats_baseline": true
+    }
+  ]
+}

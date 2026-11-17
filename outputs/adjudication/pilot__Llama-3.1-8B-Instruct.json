@@ -1,0 +1,14 @@
+{
+  "run": "pilot__Llama-3.1-8B-Instruct",
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "backend": "vllm==0.11.0",
+  "pairs": 500,
+  "seconds": 221.1,
+  "valid_json_rate": 1.0,
+  "quote_2024_found_rate": 0.9,
+  "quote_2025_found_rate": 0.914,
+  "relation_counts": {
+    "DIFFERENT": 406,
+    "SAME_SYSTEM": 94
+  }
+}

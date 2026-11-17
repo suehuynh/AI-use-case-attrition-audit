@@ -1,0 +1,45 @@
+uid_prev,cand_id,uid_next,human_match,rank,relation,confidence,rationale,model_match
+2024-00102,C1,2025-00202,True,3,DIFFERENT,high,"Different agencies, different purposes (immigration vs. airport security), and different names.",False
+2024-00321,C5,2025-00872,False,2,SAME_SYSTEM,medium,"The 2025 entry explicitly references the 2024 inventory number and mentions using Azure OpenAI, which aligns with the 2024 description.",True
+2024-00321,C8,2025-01046,True,4,DIFFERENT,high,"The 2024 entry focuses on AI API development and testing, while the 2025 entry describes a hydrological modeling project.",False
+2024-00567,C9,2025-01383,False,1,SAME_SYSTEM,high,"Both entries describe text-to-speech functionality for accessibility, with the 2025 entry using more technical language.",True
+2024-00577,C9,2025-01539,True,1,DIFFERENT,medium,"The 2024 entry focuses on using AI within ServiceNow, while the 2025 entry describes knowledge transfer to new software.",False
+2024-00577,C8,2025-01555,True,4,DIFFERENT,medium,"While both involve AI for EPA helpdesk tasks, the 2024 entry focuses on employee-initiated questions, while the 2025 entry emphasizes tier 0 resolution.",False
+2024-00631,C8,2025-02152,False,4,SAME_SYSTEM,medium,Both systems use AI to answer questions based on a user's query from a set of documents.,True
+2024-00631,C6,2025-02018,False,7,SAME_SYSTEM,medium,"Both entries describe using AI to process documents and improve efficiency, though the 2025 entry is more detailed about the problem it solves.",True
+2024-00675,C9,2025-01829,False,1,SAME_SYSTEM,high,"Both entries describe a general-purpose LLM chatbot for CDC staff, with a focus on text extraction and summarization.",True
+2024-00675,C1,2025-01824,False,3,SAME_SYSTEM,medium,Both entries describe a chatbot powered by Azure OpenAI that generates responses based on user queries and CDC content.,True
+2024-00726,C9,2025-01809,True,1,DIFFERENT,high,"The 2024 system focuses on healthcare appeals processing, while the 2025 system analyzes CDC publications.",False
+2024-00726,C2,2025-01920,True,9,DIFFERENT,high,"The 2024 entry focuses on internal appeals processing, while the 2025 entry analyzes external public comments.",False
+2024-00830,C9,2025-02114,True,1,DIFFERENT,medium,"While both entries relate to IT monitoring, the 2025 entry mentions a specific software tool, not Generative AI.",False
+2024-00848,C9,2025-02083,False,1,SAME_SYSTEM,high,"Both entries describe automating the indexing of MEDLINE citations, with 2025 using broader language.",True
+2024-00848,C1,2025-02177,True,3,DIFFERENT,high,"The 2024 system focuses on gene name extraction, while the 2025 system focuses on protein function summarization.",False
+2024-01009,C9,2025-02935,False,1,SAME_SYSTEM,high,"Both systems are described as chatbots for taxpayer inquiries within the IRS, using the same intent classification technology.",True
+2024-01009,C5,2025-02923,False,2,SAME_SYSTEM,high,"Both systems provide self-service information to taxpayers on specific topics, using NLP to classify queries and deliver predetermined responses.",True
+2024-01015,C9,2025-02935,False,1,SAME_SYSTEM,high,"Both entries describe a chatbot for taxpayer inquiries within the IRS, using the same Intent Engine and NLP technology.",True
+2024-01015,C10,2025-02923,False,6,SAME_SYSTEM,high,"Both systems are self-service applications for taxpayer inquiries within the IRS, using NLP to classify and provide predefined responses.",True
+2024-01023,C9,2025-02954,True,1,DIFFERENT,medium,"The 2025 entry lacks a purpose description, and the 2024 entry is specific to tax notices, while the 2025 entry is broader.",False
+2024-01040,C9,2025-02951,False,1,SAME_SYSTEM,medium,"Both entries describe automating code modernization within the IRS, with 2025's broader purpose encompassing the 2024's technical debt resolution.",True
+2024-01040,C8,2025-02954,False,4,SAME_SYSTEM,medium,"The 2025 entry is a broader name for the 2024 project, both within the same agency and bureau.",True
+2024-01198,C2,2025-00854,False,9,SAME_SYSTEM,medium,"The 2025 entry explicitly links to the 2024 entry by its inventory number, suggesting it is the same system.",True
+2024-01274,C9,2025-03217,True,1,DIFFERENT,medium,"While both deal with public comments, the 2024 entry focuses on AI-powered response generation, while the 2025 entry emphasizes data extraction to aid human analysts.",False
+2024-01315,C9,2025-01587,True,1,DIFFERENT,medium,"While both aim to improve data handling, the 2024 entry focuses on analyzing existing complaint data, while the 2025 entry focuses on automating data extraction from loan applications.",False
+2024-01478,C1,2025-01390,True,3,DIFFERENT,high,"Different agencies and while both deal with translation, the 2024 entry focuses on content production for multiple networks, while the 2025 entry is broader.",False
+2024-01488,C9,2025-01288,False,1,SAME_SYSTEM,high,"Both entries name the same vendor and platform, 'DDIQ', and describe it as producing data for analysis.",True
+2024-01488,C5,2025-01287,False,2,SAME_SYSTEM,high,"Both entries name the same vendor and platform, with the 2025 entry expanding the purpose to include DOJ's specific needs.",True
+2024-01630,C10,2025-03368,False,6,SAME_SYSTEM,high,Both entries describe a VA AI system predicting suicide risk from patient data and aiding clinicians.,True
+2024-01649,C1,2025-03599,False,3,SAME_SYSTEM,medium,"The 2025 entry has a new name, but the agency, bureau, and focus on mental health for cancer patients strongly suggest it's the same system.",True
+2024-01769,C9,2025-00832,False,1,SAME_SYSTEM,medium,"Both entries describe using DocketScope to analyze public comments, though the 2025 entry focuses on broader information extraction.",True
+2024-01769,C5,2025-01928,False,2,SAME_SYSTEM,high,Both entries describe a system named 'Docketscope' that uses text analysis to cluster similar public comments.,True
+2024-01829,C5,2025-01132,False,2,SAME_SYSTEM,medium,"Both entries describe DEA using data analysis for investigations, though the 2025 entry is more specific to supply chains.",True
+2024-01829,C8,2025-01136,True,4,DIFFERENT,medium,"The 2024 entry focuses on broad data analysis for insights, while the 2025 entry is a specific task related to drug seizures.",False
+2024-01829,C10,2025-01138,True,6,DIFFERENT,high,"The 2024 entry focuses on analyzing public data, while the 2025 entry focuses on gunshot detection.",False
+2024-01829,C6,2025-01137,True,7,DIFFERENT,medium,"The 2024 entry focuses on broad data analysis from various public sources, while the 2025 entry is specific to chemical analysis of drug samples.",False
+2024-01829,C7,2025-01134,True,8,DIFFERENT,medium,"While both entries involve data analysis, the 2024 entry focuses on a broad range of public data sources, while the 2025 entry specifically targets healthcare fraud.",False
+2024-01847,C5,2025-01147,False,2,SAME_SYSTEM,medium,"Both entries describe DEA drones with autonomous capabilities, and the 2025 entry expands on the outputs.",True
+2024-01993,C9,2025-01325,False,1,SAME_SYSTEM,medium,"The 2025 entry is a specific use case of Westlaw, focusing on people search within the broader DOJ context.",True
+2024-01993,C8,2025-01645,False,4,SAME_SYSTEM,high,"Both entries describe using WestLaw for legal research, even if the 2025 entry adds generative AI capabilities.",True
+2024-01993,C3,2025-02687,False,5,SAME_SYSTEM,medium,"Both entries describe using Westlaw for legal research, though the 2025 entry is more specific about the tool's features.",True
+2024-01993,C10,2025-02753,False,6,SAME_SYSTEM,medium,"Both entries describe using Westlaw for information retrieval and analysis, though the 2025 entry is broader in scope.",True
+2024-01993,C7,2025-02746,False,8,SAME_SYSTEM,medium,"Both entries use Westlaw for searching documents, though the 2025 entry is more specific about its SEC focus.",True
+2024-01993,C4,2025-01327,False,10,SAME_SYSTEM,medium,"Both systems are used for searching large datasets to aid legal work, though the 2025 entry is more specific about its data source.",True

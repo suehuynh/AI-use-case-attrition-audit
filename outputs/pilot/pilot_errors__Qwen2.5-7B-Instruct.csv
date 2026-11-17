@@ -1,0 +1,31 @@
+uid_prev,cand_id,uid_next,human_match,rank,relation,confidence,rationale,model_match
+2024-00102,C1,2025-00202,True,3,DIFFERENT,high,"Different purposes and outputs, one for automating Form I-9 processing and the other for detecting imposters at TSA checkpoints.",False
+2024-00321,C5,2025-00872,False,2,SAME_SYSTEM,medium,"The 2025 entry references the 2024 inventory number, indicating it is the same system, though the purpose and scope have broadened.",True
+2024-00321,C8,2025-01046,True,4,DIFFERENT,high,"Different purposes and outputs, one is for a public API management environment while the other is for environmental modeling.",False
+2024-00324,C9,2025-00810,False,1,SAME_SYSTEM,high,"Both entries describe a RAG chatbot designed to provide quick, accurate, and consistent responses, with the 2025 entry being a more specific implementation within a broader program.",True
+2024-00335,C9,2025-00855,True,1,DIFFERENT,high,"The 2025 entry describes a broader, more comprehensive toolset that addresses multiple aspects of the financial assistance lifecycle, while the 2024 entry focuses specifically on assessing SAM.gov documents.",False
+2024-00577,C9,2025-01539,True,1,DIFFERENT,high,"The 2025 entry describes a different task of transitioning knowledge to new software, while the 2024 entry focuses on using AI tools within ServiceNow.",False
+2024-00577,C8,2025-01555,True,4,DIFFERENT,high,"The 2025 entry describes a narrower, specific chat bot implementation for help desk tasks, while the 2024 entry covers a broader use of AI tools within ServiceNow.",False
+2024-00599,C9,2025-01715,True,1,DIFFERENT,high,"Different sources of comments and different purposes, though both involve AI for comment processing.",False
+2024-00675,C9,2025-01829,False,1,SAME_SYSTEM,high,Both entries describe a general purpose AI chatbot for CDC staff with similar functionalities.,True
+2024-00726,C9,2025-01809,True,1,DIFFERENT,high,"Different purposes and outputs, one focused on appeals adjudication and the other on analyzing CDC publications.",False
+2024-00726,C2,2025-01920,True,9,DIFFERENT,high,"Different purposes and outputs, one focused on appeals adjudication and the other on analyzing public comments.",False
+2024-00830,C9,2025-02114,True,1,DIFFERENT,high,"Different names and purposes, with no overlap in functionality.",False
+2024-00848,C1,2025-02177,True,3,DIFFERENT,high,Different tools with different purposes: gene indexing vs. summarizing articles on protein function.,False
+2024-01009,C9,2025-02935,False,1,SAME_SYSTEM,high,"Both entries describe a chatbot that provides self-service FAQs to taxpayers, using NLP and AI algorithms to classify and respond to inquiries.",True
+2024-01009,C5,2025-02923,False,2,SAME_SYSTEM,high,"Both entries use NLP and AI to classify user inputs into predefined topics and provide predetermined responses, indicating the same system.",True
+2024-01015,C9,2025-02935,False,1,SAME_SYSTEM,high,"Both entries use NLP and AI algorithms to classify taxpayer inquiries and provide predefined responses, indicating the same system with a new name.",True
+2024-01023,C9,2025-02954,True,1,DIFFERENT,high,"The 2025 entry has a different name and no reported purpose or outputs, suggesting it is a broader initiative that may not include the specific tax notice modernization project from 2024.",False
+2024-01198,C9,2025-03217,True,1,DIFFERENT,high,"The 2025 entry describes a different output format and purpose, focusing on providing CSV files for analysts rather than grouping comments by topic.",False
+2024-01198,C2,2025-00854,False,9,SAME_SYSTEM,medium,"The 2025 entry references the 2024 entry by its inventory number, indicating it is the same system.",True
+2024-01274,C9,2025-03217,True,1,DIFFERENT,high,"Different outputs and purposes; the 2024 entry involves AI processing and response recommendations, while the 2025 entry provides raw data for analysts.",False
+2024-01315,C9,2025-01587,True,1,DIFFERENT,high,Different tasks: analyzing complaint data vs. extracting structured data from loan applications.,False
+2024-01478,C1,2025-01390,True,3,DIFFERENT,high,"Different agencies and different purposes: USAGM focuses on content management and multilingual content production, while DOL aims to improve access to services and information for non-English-speaking stakeholders.",False
+2024-01630,C10,2025-03368,False,6,SAME_SYSTEM,high,"Both entries focus on identifying patients at risk of suicide using AI, with similar purposes and outputs.",True
+2024-01769,C1,2025-01065,True,3,DIFFERENT,high,"The 2024 entry focuses on identifying and sorting duplicate comments, while the 2025 entry is a broader system for receiving and managing all types of electronic comments.",False
+2024-01829,C1,2025-01135,True,3,DIFFERENT,high,"The 2025 entry focuses on real-time collaboration and situational awareness for executive protection, while the 2024 entry covers a broader range of public data sources for operational insights.",False
+2024-01829,C8,2025-01136,True,4,DIFFERENT,high,"The 2025 entry focuses on identifying cartels from drug seizures, while the 2024 entry involves analyzing a wide variety of public data sources.",False
+2024-01829,C10,2025-01138,True,6,DIFFERENT,high,"The 2024 entry focuses on analyzing public data sources, while the 2025 entry is specifically about detecting gunshots and alerting law enforcement.",False
+2024-01829,C6,2025-01137,True,7,DIFFERENT,high,"The 2024 entry focuses on analyzing public data sources, while the 2025 entry is about identifying unknown drug samples using a chemistry instrument library.",False
+2024-01829,C7,2025-01134,True,8,DIFFERENT,high,"The 2024 entry focuses on analyzing public data sources, while the 2025 entry is specifically about detecting healthcare fraud.",False
+2024-01993,C9,2025-01325,False,1,SAME_SYSTEM,medium,"Both entries refer to the same tool, Westlaw, though the 2025 entry specifies a narrower use case within a different bureau.",True

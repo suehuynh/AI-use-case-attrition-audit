@@ -1,0 +1,14 @@
+{
+  "run": "pilot__Qwen2.5-7B-Instruct",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "backend": "vllm==0.11.0",
+  "pairs": 500,
+  "seconds": 189.4,
+  "valid_json_rate": 1.0,
+  "quote_2024_found_rate": 0.9,
+  "quote_2025_found_rate": 0.872,
+  "relation_counts": {
+    "DIFFERENT": 480,
+    "SAME_SYSTEM": 20
+  }
+}
