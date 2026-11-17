@@ -46,7 +46,7 @@ Q1  Does any candidate (or a 2025 entry you found in the 2025_inventory tab) des
    program (matching name, a "previously named" note pointing to it, or the same vendor and
    function), or the 2025 entry is department-wide.
 4. **"Previously named X":** check whether X already existed in 2024 at that agency
-   (`inventory_2024_lookup.csv`). If it did, the note belongs to that entry.
+   (the `2024_inventory` tab of your sheet). If it did, the note belongs to that entry.
 5. **A 2025 entry marked Retired still counts** as `SAME_SYSTEM` if it is the same system.
 6. **No purpose text:** `SAME_SYSTEM` only with a specific link (name, vendor, rename note);
    otherwise `NO_MATCH` with confidence medium or low.

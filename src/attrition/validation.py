@@ -12,7 +12,6 @@ at the SAME agency (gold class 'same_agency'). Corrected estimate:
 from __future__ import annotations
 
 import math
-import re
 
 import numpy as np
 import pandas as pd
@@ -20,21 +19,13 @@ import pandas as pd
 MODEL_COARSE = {"renamed": "same_agency", "consolidated": "same_agency", "split": "same_agency",
                 "withheld": "same_agency", "cross_agency_move": "cross_agency",
                 "moved_to_cots": "cots", "absent": "absent"}
-HUMAN_MATCH = "SAME_SYSTEM"   # coders choose SAME_SYSTEM or NO_MATCH
 
 
-def gold_class(relation: str, match_ids: str, found_uid: str, record_agency: str,
-               key: pd.DataFrame, nxt_agency: pd.Series) -> str:
-    """Map one coder's record-level answer to same_agency / cross_agency / absent."""
-    relation = str(relation).strip()
-    if relation != HUMAN_MATCH:
-        return "absent"
-    uids = set(key.loc[key["cand_id"].isin(
-        {c.upper() for c in re.split(r"[,\s;]+", str(match_ids)) if c}), "uid_next"])
-    if str(found_uid).strip():
-        uids.add(str(found_uid).strip())
-    agencies = {nxt_agency.get(u, "") for u in uids}
-    if not agencies or agencies == {""}:
+def gold_class(matched_uids: set[str], record_agency: str, nxt_agency: pd.Series) -> str:
+    """Map one coder's matched 2025 uids (LabeledSheet.matched_uids) to
+    same_agency / cross_agency / absent."""
+    agencies = {nxt_agency.get(u, "") for u in matched_uids} - {""}
+    if not agencies:
         return "absent"
     return "same_agency" if record_agency in agencies else "cross_agency"
 

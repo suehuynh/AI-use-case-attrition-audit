@@ -1,0 +1,8 @@
+# CPU side (laptop): baseline, retrieval, sheets, classification, scoring
+pandas
+numpy
+scikit-learn
+rapidfuzz
+pyyaml
+openpyxl
+pytest

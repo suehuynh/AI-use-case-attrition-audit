@@ -183,11 +183,24 @@ class LLMAdjudicator:
             texts.append(tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True))
         return texts
 
+    MOCK_LINE = re.compile(r"^(2024|2025) \| Agency: (.*?) \| Bureau: .*? \| Name: (.*)$", re.M)
+
     def _generate_mock(self, convs: list[list[dict]]) -> list[str]:
-        """No model: lets you test the whole pipeline on a laptop."""
+        """No model: lets you test the whole pipeline on a laptop. Deterministic rule:
+        SAME_SYSTEM when the agencies match and the names are near-identical, else DIFFERENT."""
+        from rapidfuzz import fuzz
+
         self.backend_version = "mock"
-        return ['{"relation": "DIFFERENT", "confidence": "low", "evidence_2024": "", '
-                '"evidence_2025": "", "rationale": "mock"}'] * len(convs)
+        outs = []
+        for conv in convs:
+            # the pair is in the last two record lines (few-shot examples come earlier)
+            found = {y: (ag, nm) for y, ag, nm in self.MOCK_LINE.findall(conv[-1]["content"])}
+            (ag_a, nm_a), (ag_b, nm_b) = found.get("2024", ("", "")), found.get("2025", ("", ""))
+            same = ag_a == ag_b and fuzz.token_set_ratio(nm_a.lower(), nm_b.lower()) >= 90
+            outs.append(json.dumps({"relation": "SAME_SYSTEM" if same else "DIFFERENT",
+                                    "confidence": "medium", "evidence_2024": "", "evidence_2025": "",
+                                    "rationale": "mock: agency + name rule"}))
+        return outs
 
     def generate(self, convs: list[list[dict]]) -> list[str]:
         if self.backend == "vllm":
@@ -218,3 +231,10 @@ class LLMAdjudicator:
                          "model": self.model, "backend": self.backend_version,
                          **p.__dict__, "raw": raw})
         return pd.DataFrame(rows)
+
+
+def run_name(stage: str, model: str) -> str:
+    """Adjudication run name: <stage>__<model>, e.g. pilot__Qwen2.5-7B-Instruct."""
+    if stage not in ("pilot", "full"):
+        raise ValueError(f"stage must be pilot or full, not {stage!r}")
+    return f"{stage}__{model.split('/')[-1]}"

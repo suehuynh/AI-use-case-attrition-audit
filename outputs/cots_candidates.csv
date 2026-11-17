@@ -1,0 +1,10 @@
+uid,agency,name_2024,cots_product_2025,score,prior_explanation
+2024-00249,DOE,CrowdStrike,"CrowdStrike Falcon 1.0, Microsoft Defender, Vectra AI, Splunk Enterprise Security",100.0,none
+2024-00751,HHS,Travel Route Optimization by Google Maps and Apple Maps,"Google Maps, Apple Maps",85.0,none
+2024-00967,STATE,ServiceNow AI-Powered Virtual Agent (Chatbot),ServiceNow,100.0,retired_in_2024
+2024-01285,EAC,Microsoft Copilot Integration,Copilot,100.0,none
+2024-01485,USTDA,Lookout for mobile security,"Apple iPhone, Lookout for mobile security",100.0,none
+2024-01486,USTDA,Qualys Cloud Detection and Response,"Crowdstrike Falcon Threat Detection and Response, Qualys Cloud Detection and Response",100.0,none
+2024-01487,USTDA,Crowdstrike Falcon Threat Detection and Response,"Crowdstrike Falcon Threat Detection and Response, Qualys Cloud Detection and Response",100.0,none
+2024-01495,VA,Genesys Cloud Contact Center,Genesys Cloud CX,89.7,none
+2024-01707,VA,Github Copilot,Github Copilot,100.0,none

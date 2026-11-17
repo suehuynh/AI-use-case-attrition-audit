@@ -40,12 +40,12 @@ def test_stratified_total_exact_when_census():
 
 
 def test_gold_class():
-    key = pd.DataFrame({"cand_id": ["C1", "C2"], "uid_next": ["N1", "N2"]})
     ag = pd.Series({"N1": "DOJ", "N2": "SEC", "N9": "DOJ"})
-    assert gold_class("SAME_SYSTEM", "C1", "", "DOJ", key, ag) == "same_agency"
-    assert gold_class("SAME_SYSTEM", "C2", "", "DOJ", key, ag) == "cross_agency"
-    assert gold_class("NO_MATCH", "C1", "", "DOJ", key, ag) == "absent"  # ids ignored
-    assert gold_class("SAME_SYSTEM", "", "N9", "DOJ", key, ag) == "same_agency"  # found by search
+    assert gold_class({"N1"}, "DOJ", ag) == "same_agency"
+    assert gold_class({"N2"}, "DOJ", ag) == "cross_agency"
+    assert gold_class({"N1", "N2"}, "DOJ", ag) == "same_agency"   # any same-agency piece
+    assert gold_class(set(), "DOJ", ag) == "absent"
+    assert gold_class({"N404"}, "DOJ", ag) == "absent"            # unknown uid
 
 
 def test_kappa_and_weighted_pr():

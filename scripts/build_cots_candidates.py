@@ -12,6 +12,7 @@ Writes outputs/cots_candidates.csv
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -25,7 +26,9 @@ from attrition.loader import InventoryLoader  # noqa: E402
 
 
 def main() -> None:
-    cfg = Config.load(Path(__file__).resolve().parents[1] / "config.yaml")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default="config.yaml")
+    cfg = Config.load(ap.parse_args().config)
     c = cfg.raw["cots"]
     cots = pd.read_csv(cfg.raw_dir / c["file"], dtype=str).fillna("")
 

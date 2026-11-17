@@ -5,6 +5,21 @@
 paths:
   raw_dir: data/raw
   output_dir: outputs
+  # Everything below is relative to output_dir.
+  # Pilot (development set, coder1 only)
+  pilot_records: pilot/pilot_records.csv
+  pilot_pairs: pilot/pilot_pairs.csv          # record_uid, cand_id, uid_next, rank
+  pilot_sheet: handoff/coder1/pilot_sheet__coder1.xlsx   # HUMAN-LABELED
+  pilot_scores: pilot/pilot_scores.csv
+  pilot_errors: pilot/pilot_errors__{model}.csv
+  model_choice: pilot/model_choice.json       # fixed once written
+  adjudication: adjudication/{run}.csv        # run = <stage>__<model>
+  # Validation (test set, coder1 and coder2). coder2's folder holds their sheet and nothing else.
+  validation_manifest: validation/sample_manifest.csv   # model labels: never show coders
+  validation_pairs: validation/validation_pairs.csv
+  validation_sheet: handoff/{coder}/validation_sheet__{coder}.xlsx   # HUMAN-LABELED
+  disagreements: validation/disagreements.csv            # HUMAN-RESOLVED
+  validation_report: validation/validation_report.json
 
 inventories:
   "2024":
@@ -106,9 +121,9 @@ final_labels:
   - moved_to_cots       # no match; name matches a same-agency product in the 2025 COTS checklist
   - absent              # none of the above
 
-# Phase 2: held-out validation sample (two independent coders)
+# Validation sample (two independent coders). Strata come from the full run of the model in
+# model_choice.json.
 validation:
-  run: full__Qwen2.5-7B-Instruct   # strata come from the chosen model's full run (set in Step 3)
   seed: 2026
   coders: [coder1, coder2]   # anonymous coder IDs
   allocation:            # records sampled per stratum (capped at stratum size); total ~100

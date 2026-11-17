@@ -1,11 +1,10 @@
 #!/bin/bash
-# Pairwise LLM adjudication on one GPU.
-# Usage:
-#   sbatch slurm/adjudicate.sbatch                                         # pilot, default model
-#   sbatch --export=ALL,MODEL=Qwen/Qwen2.5-7B-Instruct slurm/adjudicate.sbatch
-#   sbatch --export=ALL,MODE=full slurm/adjudicate.sbatch                  # all 8,260 pairs
-#
-# Edit the partition, account, and module lines for your cluster (check its docs).
+# Pairwise LLM adjudication on one GPU (Oscar).
+# Usage (from the repo root on Oscar):
+#   sbatch --export=ALL,STAGE=pilot,MODEL=Qwen/Qwen2.5-7B-Instruct oscar/adjudicate.sbatch
+#   sbatch --time=06:00:00 --export=ALL,STAGE=full,MODEL=<chosen model> oscar/adjudicate.sbatch
+# Pilot judges exactly outputs/pilot/pilot_pairs.csv; full judges all retrieval candidates.
+# Writes outputs/adjudication/<stage>__<model>.csv and .json
 
 #SBATCH --job-name=adjudicate
 #SBATCH --partition=gpu
@@ -16,22 +15,20 @@
 #SBATCH --output=logs/%x_%j.out
 
 set -euo pipefail
-MODEL=${MODEL:-meta-llama/Llama-3.1-8B-Instruct}
-MODE=${MODE:-pilot}
+STAGE=${STAGE:-pilot}
+MODEL=${MODEL:?set MODEL, e.g. --export=ALL,MODEL=Qwen/Qwen2.5-7B-Instruct}
 BACKEND=${BACKEND:-vllm}
 
-# module load cuda          # if your cluster needs it
-source ~/envs/attrition/bin/activate   # your virtualenv with vllm installed
+module load python/3.11.11-5e66
+source ~/envs/attrition/bin/activate   # venv built from requirements-gpu.txt
 
-# Keep model weights in scratch, not your home quota
-export HF_HOME=${HF_HOME:-$HOME/scratch/hf_cache}
-# Llama models are gated: run `huggingface-cli login` once on a login node first
+# Keep model weights in scratch, not the home quota.
+# Llama and Gemma are gated: run `huggingface-cli login` once on a login node first.
+export HF_HUB_CACHE=${HF_HUB_CACHE:-$HOME/scratch/hf_cache}
+export VLLM_USE_FLASHINFER_SAMPLER=0
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 nvidia-smi
 
-PILOT_FLAG=""
-[ "$MODE" = "pilot" ] && PILOT_FLAG="--pilot"
-
-python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG
+python scripts/run_adjudication.py --stage "$STAGE" --model "$MODEL" --backend "$BACKEND"
