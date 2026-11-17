@@ -5,12 +5,13 @@ Rules (docs/codebook.md, "Final record labels"), applied to each record's best m
 
   no match            -> moved_to_cots if the record matches a same-agency 2025 COTS product,
                          else absent
-  SPLIT_INTO (best, or 2+ SPLIT_INTO candidates)        -> split
+  2+ different same-agency entries matched (codebook v3: a coder lists every piece of a split;
+      the model calls SAME_SYSTEM on each piece), or a SPLIT_INTO relation (exploratory runs) -> split
   best 2025 record is on the withheld list              -> withheld
   any match at a different agency                       -> cross_agency_move
       (checked before consolidation: merging across agencies is implausible, and these
        pairs are usually the same product at two agencies; Phase 2 checks them)
-  PART_OF, same agency                                  -> consolidated
+  PART_OF, same agency (exploratory runs only)          -> consolidated
   SAME_SYSTEM, same agency, 2025 record is shared       -> consolidated
       (shared = also the best match of another SAME-AGENCY dropped record, or already
        matched to a persisting 2024 record by the baseline)
@@ -27,8 +28,12 @@ LABEL_ORDER = ["renamed", "cross_agency_move", "consolidated", "split", "withhel
 
 
 class AttritionClassifier:
-    def __init__(self, nxt: pd.DataFrame, baseline_targets: set[str], cots_uids: set[str]):
+    def __init__(self, nxt: pd.DataFrame, baseline_targets: set[str], cots_uids: set[str],
+                 split_from_multiple_matches: bool = True):
         self.nxt = nxt.set_index("uid")
+        # True for codebook v3 (two relations). False reproduces the exploratory five-relation runs,
+        # where several SAME_SYSTEM candidates meant the model was unsure, not that the entry split.
+        self.split_from_multiple = split_from_multiple_matches
         self.baseline_targets = baseline_targets
         self.cots_uids = cots_uids
 
@@ -53,6 +58,13 @@ class AttritionClassifier:
         dup_targets = set(same.loc[same.duplicated("uid_next", keep=False), "uid_next"])
         best = best.set_index("uid_prev")
 
+        # Number of DIFFERENT same-agency 2025 entries matched per record (pieces of a split)
+        allowed = [c for c, v in CONF_ORDER.items() if v <= CONF_ORDER[min_confidence]]
+        m = adj[adj["relation"].isin(MATCH) & adj["confidence"].isin(allowed)].copy()
+        m["_pa"] = m["uid_prev"].map(dropped.set_index("uid")["agency"])
+        m["_na"] = m["uid_next"].map(self.nxt["agency"])
+        pieces = m[m["_pa"] == m["_na"]].groupby("uid_prev")["uid_next"].nunique()
+
         rows = []
         for r in dropped.itertuples(index=False):
             out = {"uid": r.uid, "agency": r.agency, "name": r.name,
@@ -69,7 +81,8 @@ class AttritionClassifier:
                        matched_name=tgt["name"], relation=b["relation"],
                        confidence=b["confidence"])
             shared = b["uid_next"] in dup_targets or b["uid_next"] in self.baseline_targets
-            if b["relation"] == "SPLIT_INTO" or b["n_split"] >= 2:
+            multi = self.split_from_multiple and pieces.get(r.uid, 0) >= 2
+            if b["relation"] == "SPLIT_INTO" or b["n_split"] >= 2 or multi:
                 label = "split"
             elif str(tgt.get("withheld", "")).lower().startswith("yes"):
                 label = "withheld"

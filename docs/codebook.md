@@ -1,61 +1,65 @@
-# Labeling Codebook (v2)
+# Labeling Codebook
 
-Used for the pilot and for the Phase 2 validation sample. Two coders label independently.
+Used for the pilot (development set) and the held-out validation sample. Coders label independently
+and never see model output.
 
-## Two separate questions
+## The question
 
-| | Question | Evidence allowed | Used for |
-|---|---|---|---|
-| **Q1. Linkage** | Does this 2024 entry appear in the 2025 inventory? | The inventory text shown in the sheet only | Scoring the LLM; attrition counts |
-| **Q2. Reality** | Does the system still operate outside the inventory? | Primary external sources, with a URL | Reporting-gap analysis of absent records |
+For each dropped 2024 record: **can the same system still be identified in the 2025 inventory?**
+Judge from the inventory text in the sheet only (name, agency, bureau, purpose). No web search.
 
-Q1 must not use outside knowledge: the LLM only sees inventory text, so a Q1 label based on outside
-facts would grade the model on information it never had. Outside findings go in Q2.
+You see one 2024 record and 10 candidate 2025 entries in random order. Choose one relation and list
+the matching candidate(s).
 
-## Q1: relation (one per record)
+## Two relations
 
-| Relation | Meaning | Candidates listed |
-|---|---|---|
-| `SAME_SYSTEM` | Same deployed system or project. Name may change (rename, version, ID tag); agency may change only if the text shows the same specific program moved. | Usually one. More than one only if the 2025 inventory lists the same system twice. |
-| `PART_OF` | The 2024 entry was absorbed into a broader 2025 entry. | One (the broader entry). |
-| `SPLIT_INTO` | A broad 2024 entry was divided into several specific 2025 entries. | Two or more, same agency. |
-| `SAME_PRODUCT_DIFFERENT_DEPLOYMENT` | Best candidate uses the same commercial product but is a separate deployment (usually another agency). Counts as no match. | The lookalike, for the record only. |
-| `NO_MATCH` | None of the 10 candidates is the same system. | None. |
+| Relation | Use when | Candidates to list |
+| --- | --- | --- |
+| `SAME_SYSTEM` | The 2024 system is still listed in 2025: in full (same or new name), as part of a broader entry, or split into narrower entries | Every matching entry (one, or all pieces of a split) |
+| `NO_MATCH` | The system cannot be identified in 2025 | None |
 
-Rules
-1. **Same product is not same system.** Westlaw at SEC is not Westlaw at DOJ. List only the
-   same-agency entry as the match; other agencies' copies are `SAME_PRODUCT_DIFFERENT_DEPLOYMENT`.
+Also fill `confidence` (high / medium / low) and, when unsure, a short note.
+
+## Decision tree
+
+```
+Q1  Does any candidate (or a 2025 entry you found in the 2025_inventory tab) describe the SAME
+    system or project, or contain the 2024 entry's function?
+    │
+    ├─ NO ───────────────────────────────────────────────────────────► NO_MATCH
+    │
+    └─ YES ─► Q2  Same agency?  (Different bureau of the same department: the 2025 entry must
+               │      name the same program, or be department-wide.)
+               │
+               ├─ NO, and no text showing the program moved ─────────► NO_MATCH
+               │
+               └─ YES, or the text shows the program moved ──────────► SAME_SYSTEM
+                                                                      list every matching entry
+```
+
+## Checks at any step
+
+1. **Same product is not same system.** Westlaw at SEC is not Westlaw at DOJ: `NO_MATCH`.
 2. **Same task is not same system.** Two agencies' "public comment analysis" tools are different
-   systems unless the text shows a transfer.
-3. **One label per record.** If unsure, choose the best label and set confidence to `low`;
-   explain in notes.
-4. **Two 2024 records matching one 2025 entry** is fine: label each `SAME_SYSTEM`; the aggregation
-   rules turn that into `consolidated`.
+   systems unless the text shows a transfer: `NO_MATCH`.
+3. **Different bureau, same department:** `SAME_SYSTEM` only if the text shows the same specific
+   program (matching name, a "previously named" note pointing to it, or the same vendor and
+   function), or the 2025 entry is department-wide.
+4. **"Previously named X":** check whether X already existed in 2024 at that agency
+   (`inventory_2024_lookup.csv`). If it did, the note belongs to that entry.
+5. **A 2025 entry marked Retired still counts** as `SAME_SYSTEM` if it is the same system.
+6. **No purpose text:** `SAME_SYSTEM` only with a specific link (name, vendor, rename note);
+   otherwise `NO_MATCH` with confidence medium or low.
+7. **Two 2024 records matching one 2025 entry** is fine: label each `SAME_SYSTEM`.
+8. **Unsure:** pick the better label, set confidence to low, add a note.
+9. **No candidate matches:** spend up to 2 minutes searching the `2025_inventory` tab; if you find
+   the system there, put its uid (e.g. `2025-01234`) in `found_2025_uid` and choose `SAME_SYSTEM`.
 
-## Q2: external_status (only for `NO_MATCH` records)
+## How human and model answers line up
 
-| Code | Meaning |
-|---|---|
-| `continued` | Still operating at the same agency (e.g. active contract, current agency page) |
-| `expanded` | Still operating, scope grew |
-| `replaced` | Ended and a successor system took over |
-| `transferred_federal` | Moved to another federal agency |
-| `transferred_out` | Moved outside the federal government (e.g. a partner government) |
-| `in_agency_inventory` | Listed in the agency's own **2025** inventory but not in the OMB file |
-| `paused` | Temporarily halted |
-| `sunset` | Ended with no successor |
-| `unknown` | No reliable evidence found |
+The model judges each pair separately: `SAME_SYSTEM` or `DIFFERENT`. A coder's `NO_MATCH` for a
+record equals the model saying `DIFFERENT` for all 10 pairs; a coder's listed candidates are the
+pairs the model should call `SAME_SYSTEM`.
 
-Source rules
-- Every code except `unknown` needs a **primary** source in `source_url`: agency page,
-  USAspending/SAM.gov record, Federal Register, official report. No URL means the code is not used.
-- Do not rely on search-engine or AI summaries; open the source and confirm the claim.
-- Agency inventory pages: confirm the **reporting year**. HealthIT.gov pages with `HHS-CMS-000xx`
-  IDs use the 2024 format (rights/safety impact, 2024 dates); HHS's 2025 inventory has no unique IDs.
-  A recent "page updated" date is not evidence of 2025 reporting.
-
-## Final record labels (derived by rules, not hand-coded)
-
-`withheld` > `renamed` (SAME_SYSTEM, same agency) > `cross_agency_move` (SAME_SYSTEM, other agency)
-> `consolidated` (PART_OF, or 2+ records to one entry) > `split` (SPLIT_INTO) > `moved_to_cots`
-> `absent`.
+Coders only choose the relation and list candidates. Final record labels (renamed, consolidated,
+split, and so on) are computed afterwards by a script from those answers; see the README.

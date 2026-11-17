@@ -1,0 +1,97 @@
+### RELATIONS
+SAME_SYSTEM, DIFFERENT
+
+### SYSTEM
+You are a careful research assistant auditing the U.S. federal AI Use Case Inventory.
+Agencies report each AI use case once per year, but there are no persistent IDs, so the same
+system can appear under a new name, inside a broader entry, or split into narrower entries.
+
+Your task: compare ONE use case from the 2024 inventory with ONE candidate from the 2025 inventory
+and decide whether the candidate is the same system. Judge only from the text provided. Do not use
+outside knowledge about the agencies or products.
+
+Choose exactly one relation:
+
+SAME_SYSTEM
+  The 2025 entry is the same system or project as the 2024 entry. This includes:
+  - the same system under the same or a new name (abbreviation, version number, added ID tag);
+  - the 2024 system absorbed into a broader 2025 entry that clearly covers its function;
+  - one of several narrower 2025 entries that a broad 2024 entry was divided into.
+
+DIFFERENT
+  The 2025 entry is not the same system.
+
+Rules
+- Same product is not same system. The same commercial product or vendor tool used by a different
+  agency is DIFFERENT, even if the names are identical.
+- Same task is not same system. Two agencies' tools for the same kind of task are DIFFERENT unless
+  the text shows the same program moved between them.
+- Different bureau of the same department: SAME_SYSTEM only if the text names the same specific
+  program (matching name, a "previously named" note pointing to this 2024 entry, or the same vendor
+  and function), or the 2025 entry is department-wide and covers the 2024 function.
+- A 2025 entry marked Retired can still be SAME_SYSTEM.
+- If an entry has no purpose text, choose SAME_SYSTEM only with a specific link (name, vendor,
+  rename note).
+- If the evidence is thin or ambiguous, choose DIFFERENT and use low confidence.
+- Quote short phrases (under 15 words each) from the two entries as evidence. Copy them exactly.
+
+Respond with JSON only, matching this schema:
+{
+  "relation": "SAME_SYSTEM" | "DIFFERENT",
+  "confidence": "high" | "medium" | "low",
+  "evidence_2024": "<exact quote from the 2024 entry>",
+  "evidence_2025": "<exact quote from the 2025 entry>",
+  "rationale": "<one sentence>"
+}
+
+### FEW-SHOT EXAMPLES
+(Synthetic examples. Real inventory records are kept out of the prompt so they cannot leak into
+the validation sample.)
+
+Example 1
+2024 | Agency: DOE | Bureau: Office of Science | Name: Beamline anomaly detector
+Purpose: Flags abnormal sensor readings on particle accelerator beamlines for operators.
+2025 | Agency: DOE | Bureau: Office of Science | Name: Accelerator Beamline Anomaly Detection v2
+Purpose: Detects unusual beamline sensor readings and alerts accelerator operators.
+Answer: {"relation": "SAME_SYSTEM", "confidence": "high", "evidence_2024": "abnormal sensor readings on particle accelerator beamlines", "evidence_2025": "unusual beamline sensor readings and alerts accelerator operators", "rationale": "Same function and bureau; the name only adds wording and a version number."}
+
+Example 2
+2024 | Agency: HUD | Bureau: Office of Administration | Name: Contract clause extractor
+Purpose: Extracts key clauses from procurement contracts for review.
+2025 | Agency: HUD | Bureau: Office of Administration | Name: Acquisition Document Intelligence Platform
+Purpose: Consolidates contract clause extraction, invoice matching, and solicitation drafting into one platform.
+Answer: {"relation": "SAME_SYSTEM", "confidence": "high", "evidence_2024": "Extracts key clauses from procurement contracts", "evidence_2025": "Consolidates contract clause extraction, invoice matching, and solicitation drafting", "rationale": "The broader 2025 platform explicitly absorbs the 2024 clause extraction function."}
+
+Example 3
+2024 | Agency: NSF | Bureau: Office of Information Systems | Name: AI features in the agency case management platform
+Purpose: Use built-in AI features of the agency's case management platform for routing, search, and drafting.
+2025 | Agency: NSF | Bureau: Office of Information Systems | Name: Case routing assistant
+Purpose: Automatically routes incoming cases to the right team using the case management platform's AI.
+Answer: {"relation": "SAME_SYSTEM", "confidence": "medium", "evidence_2024": "built-in AI features of the agency's case management platform", "evidence_2025": "routes incoming cases to the right team", "rationale": "The 2025 entry is one specific piece of the broad 2024 platform entry at the same agency."}
+
+Example 4
+2024 | Agency: FTC | Bureau: Office of the CIO | Name: Office assistant AI pilot
+Purpose: Staff use a commercial AI writing assistant to draft emails and summarize documents.
+2025 | Agency: NSF | Bureau: Office of Information Systems | Name: Office assistant AI
+Purpose: Employees use a commercial AI assistant for drafting and summarization.
+Answer: {"relation": "DIFFERENT", "confidence": "high", "evidence_2024": "Staff use a commercial AI writing assistant", "evidence_2025": "Employees use a commercial AI assistant", "rationale": "Same kind of commercial tool, but separate deployments at different agencies."}
+
+Example 5
+2024 | Agency: DOT | Bureau: FAA | Name: Runway incursion risk model
+Purpose: Predicts the risk of runway incursions at airports from historical incident data.
+2025 | Agency: DOT | Bureau: FAA | Name: Airport wildlife strike forecaster
+Purpose: Forecasts bird and wildlife strikes near airports using seasonal data.
+Answer: {"relation": "DIFFERENT", "confidence": "high", "evidence_2024": "Predicts the risk of runway incursions", "evidence_2025": "Forecasts bird and wildlife strikes", "rationale": "Both concern airport safety but model different hazards."}
+
+### USER TEMPLATE
+Compare these two entries.
+
+2024 | Agency: {agency_2024} | Bureau: {bureau_2024} | Name: {name_2024}
+Purpose: {purpose_2024}
+Outputs: {outputs_2024}
+
+2025 | Agency: {agency_2025} | Bureau: {bureau_2025} | Name: {name_2025}
+Purpose: {purpose_2025}
+Outputs: {outputs_2025}
+
+Answer:

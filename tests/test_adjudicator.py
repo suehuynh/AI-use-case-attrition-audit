@@ -42,3 +42,28 @@ def test_parse_invalid_relation():
 
 def test_parse_garbage():
     assert not parse_output("I think they are the same.", "", "").valid_json
+
+
+def test_v3_prompt_declares_two_relations():
+    cfg = Config.load(ROOT / "config.yaml")
+    b = PromptBuilder(ROOT / "prompts/adjudicator_v3.txt", cfg.raw["adjudication"]["max_field_chars"])
+    assert b.relations == ["SAME_SYSTEM", "DIFFERENT"]
+    assert "RELATIONS" not in b.system and "SAME_SYSTEM" in b.system
+
+
+def test_old_prompt_keeps_full_relation_set():
+    b = PromptBuilder(ROOT / "prompts/adjudicator_v1.txt", 600)
+    assert "PART_OF" in b.relations
+
+
+def test_parse_rejects_relation_outside_prompt():
+    raw = '{"relation": "PART_OF", "confidence": "high", "evidence_2024": "", "evidence_2025": "", "rationale": ""}'
+    assert not parse_output(raw, "", "", ["SAME_SYSTEM", "DIFFERENT"]).valid_json
+    assert parse_output(raw.replace("PART_OF", "DIFFERENT"), "", "", ["SAME_SYSTEM", "DIFFERENT"]).valid_json
+
+
+def test_merge_system_for_gemma():
+    conv = [{"role": "system", "content": "RULES"}, {"role": "user", "content": "Compare"}]
+    merged = PromptBuilder.merge_system(conv)
+    assert [m["role"] for m in merged] == ["user"]
+    assert merged[0]["content"].startswith("RULES") and merged[0]["content"].endswith("Compare")

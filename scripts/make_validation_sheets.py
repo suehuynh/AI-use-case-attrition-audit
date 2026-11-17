@@ -29,6 +29,8 @@ from attrition.validation import ValidationSampler, assign_strata  # noqa: E402
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--force", action="store_true", help="overwrite existing sheets")
+    ap.add_argument("--only", nargs="*", default=None, metavar="CODER",
+                    help="rebuild only these coders' sheets; the sample must match the saved manifest")
     args = ap.parse_args()
 
     cfg = Config.load(Path(__file__).resolve().parents[1] / "config.yaml")
@@ -60,17 +62,31 @@ def main() -> None:
     builder = LabelingSheetBuilder(nxt, seed=v["seed"])
     extra = [("found_2025_uid", 16)]
 
-    for coder in v["coders"]:
+    cols = ["uid", "agency", "stratum", "N_h", "n_h", "weight", "final_label"]
+    coders = args.only if args.only else v["coders"]
+    key = None
+    for coder in coders:
         wb, key = builder.build(records, cands, VALIDATION_INSTRUCTIONS, extra_columns=extra,
                                 inventory_tab=inventory)
+        if args.only:
+            # Rebuilding one sheet must not change the sample or the candidate order
+            old_m = pd.read_csv(vdir / "sample_manifest.csv", dtype=str)
+            old_k = pd.read_csv(vdir / "validation_key.csv", dtype=str)
+            same_m = sorted(old_m["uid"]) == sorted(manifest["uid"])
+            same_k = old_k.reset_index(drop=True).equals(key.astype(str).reset_index(drop=True))
+            if not (same_m and same_k):
+                sys.exit("STOP: the rebuilt sample or candidate order differs from the saved one; "
+                         "nothing was written.")
         save_guarded(wb, vdir / f"validation_sheet__{coder}.xlsx", args.force)
-    key.to_csv(vdir / "validation_key.csv", index=False)
-    manifest[["uid", "agency", "stratum", "N_h", "n_h", "weight", "final_label"]].to_csv(
-        vdir / "sample_manifest.csv", index=False)
+    if not args.only:
+        key.to_csv(vdir / "validation_key.csv", index=False)
+        manifest[cols].to_csv(vdir / "sample_manifest.csv", index=False)
+    else:
+        print("sample and candidate order unchanged; manifest and key kept as they were")
 
     print(f"{len(manifest)} records sampled from {labels.shape[0] - len(pilot)} non-pilot records")
     print(manifest.groupby("stratum")[["N_h", "n_h"]].first().to_string())
-    print(f"sheets for {', '.join(v['coders'])} -> {vdir}")
+    print(f"sheets for {', '.join(coders)} -> {vdir}")
 
 
 if __name__ == "__main__":

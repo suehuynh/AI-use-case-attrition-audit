@@ -126,3 +126,19 @@ Settings in `config.yaml -> validation` (run to validate, seed, coders, per-stra
 5. Report from `validation_report.json`: inter-coder agreement, design-weighted model accuracy and
    per-class precision/recall, and the corrected count of drops still in the record (with 95% CI).
    Score several runs at once: `--runs full__...__adjudicator_v1 full__...__adjudicator_v2`.
+
+## Final record labels (computed by `src/attrition/classifier.py`)
+Coders and the LLM only judge pairs (codebook v3: `SAME_SYSTEM` or `NO_MATCH`/`DIFFERENT`). The
+classifier then assigns each dropped record one label from its matched entries, in this order:
+
+| Label | Rule |
+| --- | --- |
+| `split` | two or more different same-agency 2025 entries matched |
+| `withheld` | the matched 2025 entry is on the withheld list |
+| `cross_agency_move` | the best match is at another agency |
+| `consolidated` | the matched entry is also matched by another dropped record (same agency), or was already matched to a persisting 2024 record |
+| `renamed` | one same-agency match, not shared |
+| `moved_to_cots` | no match, but a name match to the agency's product in the 2025 COTS checklist |
+| `absent` | no match |
+
+`split_from_multiple_matches: false` in `config.yaml` reproduces the exploratory five-relation runs.

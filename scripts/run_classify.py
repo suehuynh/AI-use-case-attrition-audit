@@ -48,7 +48,8 @@ def main() -> None:
         print("NOTE: no cots_candidates.csv; run scripts/build_cots_candidates.py first, "
               "otherwise moved_to_cots is 0.")
 
-    clf = AttritionClassifier(nxt, baseline_targets, cots)
+    clf = AttritionClassifier(nxt, baseline_targets, cots,
+                              cfg.raw.get("split_from_multiple_matches", True))
     labels = clf.classify(dropped, adj)
     labels["final_label_high_conf"] = clf.classify(dropped, adj, "high")["final_label"]
 

@@ -71,3 +71,16 @@ def test_high_confidence_only_drops_medium_match():
     lab = labels("high")
     assert lab["P4"] == "absent"      # its only match was medium confidence
     assert lab["P3"] == "renamed"     # N3 no longer shared once P4 is dropped
+
+
+def test_v3_split_from_multiple_same_agency_matches():
+    """Codebook v3: no SPLIT_INTO relation; two same-agency SAME_SYSTEM entries = split."""
+    adj = pd.DataFrame([pair("P7", "N6", "SAME_SYSTEM"), pair("P7", "N7", "SAME_SYSTEM", rank=2),
+                        pair("P1", "N1", "SAME_SYSTEM"), pair("P1", "N2", "SAME_SYSTEM", rank=2)])
+    d = DROPPED[DROPPED["uid"].isin(["P1", "P7"])]
+    v3 = AttritionClassifier(NXT, set(), set(), split_from_multiple_matches=True)
+    lab = dict(zip(d["uid"], v3.classify(d, adj)["final_label"]))
+    assert lab["P7"] == "split"       # two EPA entries
+    assert lab["P1"] == "renamed"     # second match is at another agency, so not a split
+    old = AttritionClassifier(NXT, set(), set(), split_from_multiple_matches=False)
+    assert dict(zip(d["uid"], old.classify(d, adj)["final_label"]))["P7"] == "renamed"
