@@ -23,7 +23,7 @@ from attrition.config import Config  # noqa: E402
 from attrition.labeling import (VALIDATION_INSTRUCTIONS, LabelingSheetBuilder,  # noqa: E402
                                 save_guarded)
 from attrition.loader import InventoryLoader  # noqa: E402
-from attrition.validation import ValidationSampler, assign_strata  # noqa: E402
+from attrition.sampling import ValidationSampler  # noqa: E402
 
 
 def main() -> None:
@@ -44,14 +44,6 @@ def main() -> None:
     pilot = set(pd.read_csv(out / "pilot_records.csv", dtype=str)["uid"])
     nxt = InventoryLoader(cfg).load("2025")
 
-    compare = None
-    if v.get("compare_run"):
-        cpath = out / "final" / v["compare_run"] / "record_labels.csv"
-        if not cpath.exists():
-            sys.exit(f"{cpath} not found: run run_classify.py for {v['compare_run']} first, "
-                     "or remove validation.compare_run from config.yaml.")
-        compare = pd.read_csv(cpath, dtype=str).fillna("")
-    labels = assign_strata(labels, compare)
     manifest = ValidationSampler(v["allocation"], v["seed"]).sample(labels, exclude=pilot)
     # Coders see records in a shuffled order so strata are not grouped together
     order = manifest.sample(frac=1, random_state=v["seed"])["uid"].tolist()

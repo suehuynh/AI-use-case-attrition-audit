@@ -19,7 +19,6 @@ set -euo pipefail
 MODEL=${MODEL:-meta-llama/Llama-3.1-8B-Instruct}
 MODE=${MODE:-pilot}
 BACKEND=${BACKEND:-vllm}
-PROMPT=${PROMPT:-}                       # e.g. prompts/adjudicator_v1.txt; empty = use config
 
 # module load cuda          # if your cluster needs it
 source ~/envs/attrition/bin/activate   # your virtualenv with vllm installed
@@ -35,7 +34,4 @@ nvidia-smi
 PILOT_FLAG=""
 [ "$MODE" = "pilot" ] && PILOT_FLAG="--pilot"
 
-PROMPT_FLAG=""
-[ -n "$PROMPT" ] && PROMPT_FLAG="--prompt-file $PROMPT"
-
-python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG $PROMPT_FLAG
+python scripts/run_adjudication.py --model "$MODEL" --backend "$BACKEND" $PILOT_FLAG

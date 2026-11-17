@@ -5,8 +5,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from attrition.validation import (ValidationSampler, assign_strata, cohen_kappa,  # noqa: E402
-                                  gold_class, stratified_total, weighted_precision_recall)
+from attrition.sampling import PilotSampler, ValidationSampler  # noqa: E402
+from attrition.validation import (cohen_kappa, gold_class, stratified_total,  # noqa: E402
+                                  weighted_precision_recall)
 
 
 def labels():
@@ -43,7 +44,7 @@ def test_gold_class():
     ag = pd.Series({"N1": "DOJ", "N2": "SEC", "N9": "DOJ"})
     assert gold_class("SAME_SYSTEM", "C1", "", "DOJ", key, ag) == "same_agency"
     assert gold_class("SAME_SYSTEM", "C2", "", "DOJ", key, ag) == "cross_agency"
-    assert gold_class("SAME_PRODUCT_DIFFERENT_DEPLOYMENT", "C2", "", "DOJ", key, ag) == "absent"
+    assert gold_class("NO_MATCH", "C1", "", "DOJ", key, ag) == "absent"  # ids ignored
     assert gold_class("SAME_SYSTEM", "", "N9", "DOJ", key, ag) == "same_agency"  # found by search
 
 
@@ -55,11 +56,8 @@ def test_kappa_and_weighted_pr():
     assert p == 1 / 4 and r == 1
 
 
-def test_disagreement_stratum():
-    lab = labels()
-    comp = lab.copy()
-    comp.loc[comp["uid"].isin(["A1", "A2", "A3"]), "final_label"] = "renamed"
-    comp.loc[comp["uid"] == "A4", "final_label"] = "cross_agency_move"   # stays in absent stratum
-    s = assign_strata(lab, comp).set_index("uid")["stratum"]
-    assert s[["A1", "A2", "A3"]].tolist() == ["absent_v1_inrecord_v2"] * 3
-    assert s["A4"] == "absent" and s["T0"] == "retired_matched"
+def test_pilot_sampler_is_deterministic_and_covers_explanations():
+    d = labels()
+    a, b = PilotSampler.sample(d, 10, seed=0), PilotSampler.sample(d, 10, seed=0)
+    assert a["uid"].tolist() == b["uid"].tolist() and len(a) == 10
+    assert set(a["prior_explanation"]) == {"none", "retired_in_2024"}

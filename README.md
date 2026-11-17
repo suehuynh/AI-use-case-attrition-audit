@@ -111,6 +111,23 @@ Final labels: `outputs/final/<run>/record_labels.csv` (one row per dropped recor
 2025 record, the relation, and `consolidation_reason`), `by_agency.csv`, `summary.json`.
 `final_label_high_conf` repeats the labeling using only high-confidence LLM matches (sensitivity check).
 
+## Model choice rule (fixed before scoring)
+Three models are run on the 50-record pilot: Qwen2.5-7B-Instruct, Llama-3.1-8B-Instruct and
+gemma-2-9b-it (temperature 0, seed 0). The model used for the full run is chosen by this rule,
+written down before any pilot scores were computed:
+
+1. Keep only models whose pilot **record accuracy** is higher than the always-`NO_MATCH` baseline
+   (the share of pilot records coder1 labeled `NO_MATCH`).
+2. Among those, choose the model with the highest record accuracy.
+3. Ties are broken by pair-level Cohen's kappa (`SAME_SYSTEM` vs not) against coder1.
+
+Record accuracy: a record is correct if both the model and coder1 find no match, or the model's
+best match (highest confidence, then best retrieval rank) is one of the candidates coder1 listed.
+If no model beats the baseline, no model is chosen and the prompt is revisited on the pilot only.
+
+The pilot (50 records, coder1 only) is the development set. The validation sample (100 records,
+coder1 and coder2) is the test set: no prompt or rule changes are made after looking at it.
+
 ## Phase 2: held-out validation (two coders)
 Settings in `config.yaml -> validation` (run to validate, seed, coders, per-stratum allocation).
 
@@ -125,10 +142,10 @@ Settings in `config.yaml -> validation` (run to validate, seed, coders, per-stra
 4. Resolve disagreements together (fill the `resolved_*` columns) and rerun step 3.
 5. Report from `validation_report.json`: inter-coder agreement, design-weighted model accuracy and
    per-class precision/recall, and the corrected count of drops still in the record (with 95% CI).
-   Score several runs at once: `--runs full__...__adjudicator_v1 full__...__adjudicator_v2`.
+   Score several runs at once: `--runs full__Qwen2.5-7B-Instruct full__gemma-2-9b-it`.
 
 ## Final record labels (computed by `src/attrition/classifier.py`)
-Coders and the LLM only judge pairs (codebook v3: `SAME_SYSTEM` or `NO_MATCH`/`DIFFERENT`). The
+Coders and the LLM only judge pairs (`docs/codebook.md`: `SAME_SYSTEM` or `NO_MATCH`/`DIFFERENT`). The
 classifier then assigns each dropped record one label from its matched entries, in this order:
 
 | Label | Rule |
@@ -141,4 +158,3 @@ classifier then assigns each dropped record one label from its matched entries, 
 | `moved_to_cots` | no match, but a name match to the agency's product in the 2025 COTS checklist |
 | `absent` | no match |
 
-`split_from_multiple_matches: false` in `config.yaml` reproduces the exploratory five-relation runs.

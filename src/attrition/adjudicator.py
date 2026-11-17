@@ -1,8 +1,9 @@
-"""Phase 1 step 3: pairwise LLM adjudication.
+"""Pairwise LLM adjudication.
 
-PromptBuilder   reads prompts/adjudicator_v1.txt and fills it for one (2024, 2025) pair
-PilotSampler    picks the dropped records for the pilot run
+PromptBuilder   reads prompts/adjudicator.txt and fills it for one (2024, 2025) pair
 LLMAdjudicator  runs a backend (vllm | transformers | mock) and parses + checks the JSON
+
+The model judges one pair at a time: SAME_SYSTEM or DIFFERENT (docs/codebook.md).
 """
 from __future__ import annotations
 
@@ -15,44 +16,36 @@ import pandas as pd
 
 from .config import Config
 
-RELATIONS = ["SAME_SYSTEM", "PART_OF", "SPLIT_INTO", "SAME_PRODUCT_DIFFERENT_DEPLOYMENT", "DIFFERENT"]
+RELATIONS = ["SAME_SYSTEM", "DIFFERENT"]
+MATCH = "SAME_SYSTEM"
 CONFIDENCES = ["high", "medium", "low"]
 
-def output_schema(relations: list[str]) -> dict:
-    """JSON schema for structured decoding, restricted to the relations a prompt allows."""
-    return {
+OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
-        "relation": {"type": "string", "enum": list(relations)},
+        "relation": {"type": "string", "enum": RELATIONS},
         "confidence": {"type": "string", "enum": CONFIDENCES},
         "evidence_2024": {"type": "string"},
         "evidence_2025": {"type": "string"},
         "rationale": {"type": "string"},
     },
     "required": ["relation", "confidence", "evidence_2024", "evidence_2025", "rationale"],
-    }
-
-
-OUTPUT_SCHEMA = output_schema(RELATIONS)  # exploratory prompts (v1, v2)
+}
 
 
 # ---------------------------------------------------------------------------
 class PromptBuilder:
     """Splits the prompt file into system text (instructions + few-shot) and a user template."""
 
-    SECTION = re.compile(r"^### (RELATIONS|SYSTEM|FEW-SHOT EXAMPLES|USER TEMPLATE)\s*$", re.M)
+    SECTION = re.compile(r"^### (SYSTEM|FEW-SHOT EXAMPLES|USER TEMPLATE)\s*$", re.M)
 
     def __init__(self, prompt_path: Path, max_field_chars: int):
-        text = prompt_path.read_text()
+        text = Path(prompt_path).read_text(encoding="utf-8")
         parts = self.SECTION.split(text)
         sections = {parts[i]: parts[i + 1].strip() for i in range(1, len(parts), 2)}
         self.system = sections["SYSTEM"] + "\n\n" + sections["FEW-SHOT EXAMPLES"]
         self.user_template = sections["USER TEMPLATE"]
-        # A prompt may declare its own answer set (v3: SAME_SYSTEM, DIFFERENT); older prompts use all
-        self.relations = ([r.strip() for r in sections["RELATIONS"].split(",") if r.strip()]
-                          if "RELATIONS" in sections else list(RELATIONS))
         self.max_chars = max_field_chars
-        self.version = prompt_path.stem
 
     def _clip(self, value: object) -> str:
         s = "" if value is None or (isinstance(value, float) and pd.isna(value)) else str(value)
@@ -81,18 +74,6 @@ class PromptBuilder:
 
 
 # ---------------------------------------------------------------------------
-class PilotSampler:
-    """Pilot sample stratified by prior explanation, so explained drops are also checked."""
-
-    @staticmethod
-    def sample(dropped: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
-        frac = n / len(dropped)
-        parts = [g.sample(max(1, round(len(g) * frac)), random_state=seed)
-                 for _, g in dropped.groupby("prior_explanation")]
-        return pd.concat(parts).head(n).reset_index(drop=True)
-
-
-# ---------------------------------------------------------------------------
 @dataclass
 class ParsedOutput:
     valid_json: bool
@@ -109,16 +90,14 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", str(s)).strip().casefold()
 
 
-def parse_output(raw: str, a_text: str, b_text: str,
-                 relations: list[str] | None = None) -> ParsedOutput:
+def parse_output(raw: str, a_text: str, b_text: str) -> ParsedOutput:
     """Parse model JSON and check that each evidence quote appears in its record."""
     m = re.search(r"\{.*\}", raw, re.S)
     try:
         d = json.loads(m.group(0)) if m else {}
     except json.JSONDecodeError:
         d = {}
-    allowed = relations or RELATIONS
-    rel = d.get("relation") if d.get("relation") in allowed else None
+    rel = d.get("relation") if d.get("relation") in RELATIONS else None
     conf = d.get("confidence") if d.get("confidence") in CONFIDENCES else None
     e24, e25 = str(d.get("evidence_2024", "")), str(d.get("evidence_2025", ""))
     return ParsedOutput(
@@ -146,7 +125,6 @@ class LLMAdjudicator:
         self.max_model_len = p.get("max_model_len", 4096)
         self.gpu_memory_utilization = p.get("gpu_memory_utilization", 0.90)
         self.prompts = PromptBuilder(config.root / p["prompt_file"], p["max_field_chars"])
-        self.schema = output_schema(self.prompts.relations)
         self.merge_system = p.get("merge_system_prompt", "gemma" in model.lower())
         self._engine = None
         self.backend_version = "n/a"
@@ -170,16 +148,17 @@ class LLMAdjudicator:
         outs = self._engine.chat(convs, SamplingParams(**kwargs), use_tqdm=True)
         return [o.outputs[0].text for o in outs]
 
-    def _vllm_structured_kwargs(self) -> dict:
+    @staticmethod
+    def _vllm_structured_kwargs() -> dict:
         """The structured-output API was renamed across vLLM releases; try new then old."""
         try:
             from vllm.sampling_params import StructuredOutputsParams
-            return {"structured_outputs": StructuredOutputsParams(json=self.schema)}
+            return {"structured_outputs": StructuredOutputsParams(json=OUTPUT_SCHEMA)}
         except ImportError:
             pass
         try:
             from vllm.sampling_params import GuidedDecodingParams
-            return {"guided_decoding": GuidedDecodingParams(json=self.schema)}
+            return {"guided_decoding": GuidedDecodingParams(json=OUTPUT_SCHEMA)}
         except ImportError:
             print("WARNING: no structured-output API found; relying on prompt + parser.")
             return {}
@@ -204,9 +183,9 @@ class LLMAdjudicator:
             texts.append(tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True))
         return texts
 
-    @staticmethod
-    def _generate_mock(convs: list[list[dict]]) -> list[str]:
+    def _generate_mock(self, convs: list[list[dict]]) -> list[str]:
         """No model: lets you test the whole pipeline on a laptop."""
+        self.backend_version = "mock"
         return ['{"relation": "DIFFERENT", "confidence": "low", "evidence_2024": "", '
                 '"evidence_2025": "", "rationale": "mock"}'] * len(convs)
 
@@ -234,8 +213,8 @@ class LLMAdjudicator:
         raws = self.generate(convs)
         rows = []
         for r, raw, (ta, tb) in zip(pairs.itertuples(), raws, texts):
-            p = parse_output(raw, ta, tb, self.prompts.relations)
+            p = parse_output(raw, ta, tb)
             rows.append({"uid_prev": r.uid_prev, "uid_next": r.uid_next, "rank": r.rank,
                          "model": self.model, "backend": self.backend_version,
-                         "prompt_version": self.prompts.version, **p.__dict__, "raw": raw})
+                         **p.__dict__, "raw": raw})
         return pd.DataFrame(rows)

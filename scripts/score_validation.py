@@ -2,8 +2,7 @@
 
 Usage
   python scripts/score_validation.py                       # after both coders finish
-  python scripts/score_validation.py --runs full__Qwen2.5-7B-Instruct__adjudicator_v1 \
-                                            full__Qwen2.5-7B-Instruct__adjudicator_v2
+  python scripts/score_validation.py --runs full__Qwen2.5-7B-Instruct full__gemma-2-9b-it
 
 Steps
 1. Reads both coders' sheets; reports agreement (kappa) on relation and on the gold class.

@@ -81,7 +81,7 @@ retrieval:
 
 # Phase 1 step 3: pairwise LLM adjudication (one call per dropped record x candidate)
 adjudication:
-  prompt_file: prompts/adjudicator_v3.txt   # codebook v3 (two relations); v1, v2 = exploratory
+  prompt_file: prompts/adjudicator.txt   # pairwise SAME_SYSTEM / DIFFERENT (docs/codebook.md)
   models:                     # compared on the 50-record pilot (similar size, three families)
     - Qwen/Qwen2.5-7B-Instruct
     - meta-llama/Llama-3.1-8B-Instruct
@@ -95,32 +95,25 @@ adjudication:
   max_model_len: 4096           # prompt ~2k tokens + 200 output; default 128k won't fit in 24 GB
   gpu_memory_utilization: 0.90
 
-# Deterministic rules that turn pairwise relations into one label per dropped record
-# (applied in AttritionClassifier, priority order)
+# Deterministic rules that turn SAME_SYSTEM pairs into one label per dropped record
+# (applied in AttritionClassifier, in this priority order; documentation only)
 final_labels:
-  - withheld            # 2025 record on the withheld list (rule, no LLM)
-  - renamed             # SAME_SYSTEM, same agency
-  - cross_agency_move   # SAME_SYSTEM, different agency
-  - consolidated        # PART_OF, or 2+ dropped records SAME_SYSTEM to one 2025 record
-  - split               # 2+ different same-agency entries matched (v3), or SPLIT_INTO (exploratory)
-  - moved_to_cots       # matches a same-agency product in the 2025 COTS checklist
+  - split               # 2+ different same-agency 2025 entries matched
+  - withheld            # best match is on the 2025 withheld list
+  - cross_agency_move   # best match is at a different agency
+  - consolidated        # best match shared with another same-agency drop or a persisting record
+  - renamed             # one same-agency match, not shared
+  - moved_to_cots       # no match; name matches a same-agency product in the 2025 COTS checklist
   - absent              # none of the above
 
 # Phase 2: held-out validation sample (two independent coders)
 validation:
-  run: full__Qwen2.5-7B-Instruct__adjudicator_v1   # strata come from this run's final labels
-  compare_run: full__Qwen2.5-7B-Instruct__adjudicator_v2   # records absent in run but in-record here
-                                                           # get their own stratum (prompt disagreement)
+  run: full__Qwen2.5-7B-Instruct   # strata come from the chosen model's full run (set in Step 3)
   seed: 2026
   coders: [coder1, coder2]   # anonymous coder IDs
   allocation:            # records sampled per stratum (capped at stratum size); total ~100
-    absent: 25
-    absent_v1_inrecord_v2: 10   # prompt disagreement: v1 absent, v2 still in record
+    absent: 35
     renamed: 20
     consolidated: 20
     cross_agency_move: 12
     retired_matched: 13  # retired in 2024 but matched in 2025 (suspect)
-
-# Codebook v3 (two relations): a split = two or more different same-agency entries matched.
-# Set to false only to reproduce the exploratory five-relation runs exactly.
-split_from_multiple_matches: true

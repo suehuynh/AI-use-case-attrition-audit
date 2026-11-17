@@ -1,7 +1,7 @@
 """Phase 1 step 4: final label per dropped record, plus summary tables.
 
 Usage
-  python scripts/run_classify.py --run full__Qwen2.5-7B-Instruct__adjudicator_v1
+  python scripts/run_classify.py --run full__Qwen2.5-7B-Instruct
 
 Reads  outputs/adjudication/<run>.csv, outputs/dropped_tagged.csv,
        outputs/baseline_matches.csv, outputs/cots_candidates.csv (optional)
@@ -48,8 +48,7 @@ def main() -> None:
         print("NOTE: no cots_candidates.csv; run scripts/build_cots_candidates.py first, "
               "otherwise moved_to_cots is 0.")
 
-    clf = AttritionClassifier(nxt, baseline_targets, cots,
-                              cfg.raw.get("split_from_multiple_matches", True))
+    clf = AttritionClassifier(nxt, baseline_targets, cots)
     labels = clf.classify(dropped, adj)
     labels["final_label_high_conf"] = clf.classify(dropped, adj, "high")["final_label"]
 

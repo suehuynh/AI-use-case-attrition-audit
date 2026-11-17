@@ -34,9 +34,7 @@ def main() -> None:
     nxt = InventoryLoader(cfg).load("2025")
 
     builder = LabelingSheetBuilder(nxt, seed=cfg.raw["adjudication"]["seed"])
-    wb, key = builder.build(pilot, cands, PILOT_INSTRUCTIONS,
-                            extra_columns=[("external_status", 20), ("source_url", 40)],
-                            external_dropdown=True)
+    wb, key = builder.build(pilot, cands, PILOT_INSTRUCTIONS)
     label_dir = out / "labeling"
     save_guarded(wb, label_dir / "pilot_labeling_sheet.xlsx", args.force)
     key.to_csv(label_dir / "pilot_labeling_key.csv", index=False)
